@@ -1,0 +1,253 @@
+:root {
+  --bg: #12141d;
+  --surface: #1c1f2b;
+  --surface-raised: #252938;
+  --text: #eceef4;
+  --text-muted: #9aa0b4;
+  --accent: #f4b942;
+  --accent-text: #1a1405;
+  --border: #323649;
+  --error: #ff7a7a;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif;
+  line-height: 1.5;
+}
+
+.app {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 4rem;
+}
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  letter-spacing: -0.02em;
+}
+
+.tagline {
+  margin: 0.15rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.whoami {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+}
+
+label {
+  display: block;
+  margin: 0.75rem 0 0.25rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+textarea {
+  resize: vertical;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.primary {
+  margin-top: 1rem;
+  padding: 0.55rem 1.1rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  font-size: 0.9rem;
+}
+
+.toggle-form {
+  width: 100%;
+  margin: 0 0 1rem;
+}
+
+.song-form {
+  margin-bottom: 1.5rem;
+}
+
+.mock-banner {
+  background: var(--surface-raised);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0 0 1rem;
+}
+
+.filters {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.filters select {
+  width: auto;
+  flex: 1;
+}
+
+.song-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.song-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.song-card h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.genre-chip {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.1rem 0.6rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.song-artist {
+  margin: 0.1rem 0 0;
+  color: var(--text-muted);
+}
+
+.song-notes {
+  margin: 0.6rem 0 0;
+  font-style: italic;
+}
+
+.song-meta {
+  margin: 0.6rem 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.comments {
+  border-top: 1px solid var(--border);
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+}
+
+.comment {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+}
+
+.comment strong {
+  color: var(--accent);
+  margin-right: 0.35rem;
+  font-weight: 600;
+}
+
+.comment-form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.comment-form .primary {
+  margin-top: 0;
+  flex-shrink: 0;
+}
+
+.status {
+  color: var(--text-muted);
+  text-align: center;
+  margin: 1.5rem 0;
+}
+
+.status.error {
+  color: var(--error);
+}
+
+.name-prompt {
+  padding-top: 4rem;
+  text-align: center;
+}
+
+.name-prompt .card {
+  margin-top: 1.5rem;
+  text-align: left;
+}
+
+.hint {
+  margin: 0.75rem 0 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
