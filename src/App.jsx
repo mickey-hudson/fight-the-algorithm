@@ -1,5 +1,14 @@
 import { useEffect, useState } from 'react'
-import { fetchAll, addSong, addComment, isMockMode } from './api'
+import {
+  fetchAll,
+  addSong,
+  addComment,
+  editSong,
+  deleteSong,
+  editComment,
+  deleteComment,
+  isMockMode,
+} from './api'
 import NamePrompt from './components/NamePrompt'
 import SongForm from './components/SongForm'
 import SongList from './components/SongList'
@@ -40,6 +49,27 @@ export default function App() {
     setComments((prev) => [...prev, comment])
   }
 
+  async function handleEditSong(id, fields) {
+    const updated = await editSong({ id, requester: name, ...fields })
+    setSongs((prev) => prev.map((s) => (s.id === id ? updated : s)))
+  }
+
+  async function handleDeleteSong(id) {
+    await deleteSong({ id, requester: name })
+    setSongs((prev) => prev.filter((s) => s.id !== id))
+    setComments((prev) => prev.filter((c) => c.songId !== id))
+  }
+
+  async function handleEditComment(id, text) {
+    const updated = await editComment({ id, requester: name, text })
+    setComments((prev) => prev.map((c) => (c.id === id ? updated : c)))
+  }
+
+  async function handleDeleteComment(id) {
+    await deleteComment({ id, requester: name })
+    setComments((prev) => prev.filter((c) => c.id !== id))
+  }
+
   if (!name) {
     return <NamePrompt onSubmit={handleSetName} />
   }
@@ -77,7 +107,12 @@ export default function App() {
         <SongList
           songs={songs}
           comments={comments}
+          currentUser={name}
           onAddComment={handleAddComment}
+          onEditSong={handleEditSong}
+          onDeleteSong={handleDeleteSong}
+          onEditComment={handleEditComment}
+          onDeleteComment={handleDeleteComment}
         />
       )}
     </div>

@@ -41,6 +41,28 @@ export async function addComment(fields) {
   return data.comment
 }
 
+export async function editSong(fields) {
+  if (isMockMode) return mockEdit('songs', fields)
+  const data = await post({ action: 'editSong', ...fields })
+  return data.song
+}
+
+export async function deleteSong(fields) {
+  if (isMockMode) return mockDelete('songs', fields)
+  return post({ action: 'deleteSong', ...fields })
+}
+
+export async function editComment(fields) {
+  if (isMockMode) return mockEdit('comments', fields)
+  const data = await post({ action: 'editComment', ...fields })
+  return data.comment
+}
+
+export async function deleteComment(fields) {
+  if (isMockMode) return mockDelete('comments', fields)
+  return post({ action: 'deleteComment', ...fields })
+}
+
 // --- Mock backend (used until APPS_SCRIPT_URL is configured) ---
 
 const MOCK_KEY = 'fta-mock-data'
@@ -103,4 +125,25 @@ async function mockAdd(collection, fields) {
   data[collection].push(record)
   localStorage.setItem(MOCK_KEY, JSON.stringify(data))
   return record
+}
+
+async function mockEdit(collection, { id, requester, ...fields }) {
+  await new Promise((r) => setTimeout(r, 400))
+  const data = mockLoad()
+  const record = data[collection].find((r) => r.id === id)
+  if (!record) throw new Error('Not found')
+  Object.assign(record, fields)
+  localStorage.setItem(MOCK_KEY, JSON.stringify(data))
+  return record
+}
+
+async function mockDelete(collection, { id }) {
+  await new Promise((r) => setTimeout(r, 400))
+  const data = mockLoad()
+  data[collection] = data[collection].filter((r) => r.id !== id)
+  if (collection === 'songs') {
+    data.comments = data.comments.filter((c) => c.songId !== id)
+  }
+  localStorage.setItem(MOCK_KEY, JSON.stringify(data))
+  return { ok: true, deletedId: id }
 }

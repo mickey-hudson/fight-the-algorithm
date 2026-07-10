@@ -1,8 +1,37 @@
 import { useState } from 'react'
 import CommentSection from './CommentSection'
+import ConfirmButton from './ConfirmButton'
+import SongForm from './SongForm'
 
-export default function SongCard({ song, comments, onAddComment }) {
+export default function SongCard({
+  song,
+  comments,
+  currentUser,
+  onAddComment,
+  onEditSong,
+  onDeleteSong,
+  onEditComment,
+  onDeleteComment,
+}) {
   const [showComments, setShowComments] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const isOwner = song.recommender === currentUser
+
+  if (editing) {
+    return (
+      <li className="card song-card">
+        <SongForm
+          initial={song}
+          submitLabel="Save changes"
+          onCancel={() => setEditing(false)}
+          onSubmit={async (fields) => {
+            await onEditSong(song.id, fields)
+            setEditing(false)
+          }}
+        />
+      </li>
+    )
+  }
 
   return (
     <li className="card song-card">
@@ -16,18 +45,35 @@ export default function SongCard({ song, comments, onAddComment }) {
         from <strong>{song.recommender}</strong> · {formatDate(song.createdAt)}
       </p>
 
-      <button className="link-button" onClick={() => setShowComments((v) => !v)}>
-        {showComments
-          ? 'Hide comments'
-          : comments.length
-            ? `Comments (${comments.length})`
-            : 'Add a comment'}
-      </button>
+      <div className="card-actions">
+        <button className="link-button" onClick={() => setShowComments((v) => !v)}>
+          {showComments
+            ? 'Hide comments'
+            : comments.length
+              ? `Comments (${comments.length})`
+              : 'Add a comment'}
+        </button>
+        {isOwner && (
+          <>
+            <button className="link-button" onClick={() => setEditing(true)}>
+              Edit
+            </button>
+            <ConfirmButton
+              label="Delete"
+              confirmLabel="Delete song + comments?"
+              onConfirm={() => onDeleteSong(song.id)}
+            />
+          </>
+        )}
+      </div>
 
       {showComments && (
         <CommentSection
           comments={comments}
+          currentUser={currentUser}
           onAdd={(text) => onAddComment(song.id, text)}
+          onEdit={onEditComment}
+          onDelete={onDeleteComment}
         />
       )}
     </li>

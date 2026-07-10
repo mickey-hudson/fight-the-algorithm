@@ -2,8 +2,17 @@ import { useState } from 'react'
 
 const EMPTY = { song: '', artist: '', genre: '', notes: '' }
 
-export default function SongForm({ onSubmit }) {
-  const [fields, setFields] = useState(EMPTY)
+export default function SongForm({ onSubmit, initial, submitLabel = 'Add suggestion', onCancel }) {
+  const [fields, setFields] = useState(() =>
+    initial
+      ? {
+          song: initial.song,
+          artist: initial.artist,
+          genre: initial.genre,
+          notes: initial.notes,
+        }
+      : EMPTY
+  )
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
@@ -60,9 +69,16 @@ export default function SongForm({ onSubmit }) {
       />
 
       {error && <p className="status error">Couldn’t save: {error}</p>}
-      <button className="primary" type="submit" disabled={!valid || submitting}>
-        {submitting ? 'Saving…' : 'Add suggestion'}
-      </button>
+      <div className="form-actions">
+        <button className="primary" type="submit" disabled={!valid || submitting}>
+          {submitting ? 'Saving…' : submitLabel}
+        </button>
+        {onCancel && (
+          <button type="button" className="link-button" onClick={onCancel}>
+            Cancel
+          </button>
+        )}
+      </div>
     </form>
   )
 }

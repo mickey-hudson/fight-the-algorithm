@@ -55,6 +55,14 @@ function doPost(e) {
         return jsonResponse(addSong(body));
       case 'addComment':
         return jsonResponse(addComment(body));
+      case 'editSong':
+        return jsonResponse(editSong(body));
+      case 'deleteSong':
+        return jsonResponse(deleteSong(body));
+      case 'editComment':
+        return jsonResponse(editComment(body));
+      case 'deleteComment':
+        return jsonResponse(deleteComment(body));
       default:
         return jsonResponse({ error: 'Unknown action: ' + body.action });
     }
@@ -93,6 +101,105 @@ function addComment(body) {
   };
   appendRecord(COMMENTS_SHEET, COMMENTS_HEADERS, record);
   return { comment: record };
+}
+
+function editSong(body) {
+  var missing = requireFields(body, ['id', 'requester', 'song', 'artist']);
+  if (missing) return missing;
+
+  var found = findRowById(SONGS_SHEET, SONGS_HEADERS, body.id);
+  if (!found) return { error: 'Song not found' };
+  if (found.record.recommender !== clean(body.requester)) {
+    return { error: 'Only the person who suggested a song can edit it' };
+  }
+
+  var record = found.record;
+  record.song = clean(body.song);
+  record.artist = clean(body.artist);
+  record.genre = clean(body.genre);
+  record.notes = clean(body.notes);
+  writeRecord(found, SONGS_HEADERS, record);
+  return { song: record };
+}
+
+function deleteSong(body) {
+  var missing = requireFields(body, ['id', 'requester']);
+  if (missing) return missing;
+
+  var found = findRowById(SONGS_SHEET, SONGS_HEADERS, body.id);
+  if (!found) return { error: 'Song not found' };
+  if (found.record.recommender !== clean(body.requester)) {
+    return { error: 'Only the person who suggested a song can delete it' };
+  }
+
+  found.sheet.deleteRow(found.rowIndex);
+  deleteCommentsForSong(body.id);
+  return { ok: true, deletedId: body.id };
+}
+
+function editComment(body) {
+  var missing = requireFields(body, ['id', 'requester', 'text']);
+  if (missing) return missing;
+
+  var found = findRowById(COMMENTS_SHEET, COMMENTS_HEADERS, body.id);
+  if (!found) return { error: 'Comment not found' };
+  if (found.record.author !== clean(body.requester)) {
+    return { error: 'Only the person who wrote a comment can edit it' };
+  }
+
+  var record = found.record;
+  record.text = clean(body.text);
+  writeRecord(found, COMMENTS_HEADERS, record);
+  return { comment: record };
+}
+
+function deleteComment(body) {
+  var missing = requireFields(body, ['id', 'requester']);
+  if (missing) return missing;
+
+  var found = findRowById(COMMENTS_SHEET, COMMENTS_HEADERS, body.id);
+  if (!found) return { error: 'Comment not found' };
+  if (found.record.author !== clean(body.requester)) {
+    return { error: 'Only the person who wrote a comment can delete it' };
+  }
+
+  found.sheet.deleteRow(found.rowIndex);
+  return { ok: true, deletedId: body.id };
+}
+
+function deleteCommentsForSong(songId) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(COMMENTS_SHEET);
+  if (!sheet) return;
+  var values = sheet.getDataRange().getValues();
+  // Bottom-up so earlier deletions don't shift the rows still to check.
+  for (var r = values.length - 1; r >= 1; r--) {
+    if (String(values[r][1]) === songId) {
+      sheet.deleteRow(r + 1);
+    }
+  }
+}
+
+function findRowById(sheetName, headers, id) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+  if (!sheet) return null;
+  var values = sheet.getDataRange().getValues();
+  for (var r = 1; r < values.length; r++) {
+    if (String(values[r][0]) === id) {
+      var record = {};
+      for (var c = 0; c < headers.length; c++) {
+        var cell = values[r][c];
+        record[headers[c]] = cell instanceof Date ? cell.toISOString() : String(cell);
+      }
+      return { sheet: sheet, rowIndex: r + 1, record: record };
+    }
+  }
+  return null;
+}
+
+function writeRecord(found, headers, record) {
+  found.sheet
+    .getRange(found.rowIndex, 1, 1, headers.length)
+    .setValues([headers.map(function (h) { return record[h]; })]);
 }
 
 function requireFields(body, fields) {

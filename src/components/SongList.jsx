@@ -1,7 +1,16 @@
 import { useMemo, useState } from 'react'
 import SongCard from './SongCard'
 
-export default function SongList({ songs, comments, onAddComment }) {
+export default function SongList({
+  songs,
+  comments,
+  currentUser,
+  onAddComment,
+  onEditSong,
+  onDeleteSong,
+  onEditComment,
+  onDeleteComment,
+}) {
   const [genre, setGenre] = useState('')
   const [recommender, setRecommender] = useState('')
 
@@ -52,7 +61,12 @@ export default function SongList({ songs, comments, onAddComment }) {
             key={song.id}
             song={song}
             comments={comments.filter((c) => c.songId === song.id)}
+            currentUser={currentUser}
             onAddComment={onAddComment}
+            onEditSong={onEditSong}
+            onDeleteSong={onDeleteSong}
+            onEditComment={onEditComment}
+            onDeleteComment={onDeleteComment}
           />
         ))}
       </ul>
