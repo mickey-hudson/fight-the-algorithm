@@ -63,6 +63,11 @@ export async function deleteComment(fields) {
   return post({ action: 'deleteComment', ...fields })
 }
 
+export async function toggleMeatloaf(fields) {
+  if (isMockMode) return mockToggleMeatloaf(fields)
+  return post({ action: 'toggleMeatloaf', ...fields })
+}
+
 // --- Mock backend (used until APPS_SCRIPT_URL is configured) ---
 
 const MOCK_KEY = 'fta-mock-data'
@@ -106,12 +111,27 @@ const MOCK_SEED = {
       createdAt: '2026-07-04T12:00:00.000Z',
     },
   ],
+  meatloafs: [
+    {
+      id: 'seed-m1',
+      songId: 'seed-2',
+      voter: 'Sam',
+      createdAt: '2026-07-04T12:00:00.000Z',
+    },
+    {
+      id: 'seed-m2',
+      songId: 'seed-2',
+      voter: 'Jordan',
+      createdAt: '2026-07-05T12:00:00.000Z',
+    },
+  ],
 }
 
 function mockLoad() {
   try {
     const stored = localStorage.getItem(MOCK_KEY)
-    if (stored) return JSON.parse(stored)
+    // Merge with empty defaults so data saved before newer collections existed still works.
+    if (stored) return { songs: [], comments: [], meatloafs: [], ...JSON.parse(stored) }
   } catch {
     // fall through to seed
   }
@@ -146,12 +166,35 @@ async function mockEdit(collection, { id, requester, ...fields }) {
   return record
 }
 
+async function mockToggleMeatloaf({ songId, voter }) {
+  await new Promise((r) => setTimeout(r, 400))
+  const data = mockLoad()
+  const existing = data.meatloafs.find((m) => m.songId === songId && m.voter === voter)
+  let result
+  if (existing) {
+    data.meatloafs = data.meatloafs.filter((m) => m !== existing)
+    result = { removed: true, songId, voter }
+  } else {
+    const record = {
+      id: crypto.randomUUID(),
+      songId,
+      voter,
+      createdAt: new Date().toISOString(),
+    }
+    data.meatloafs.push(record)
+    result = { meatloaf: record }
+  }
+  localStorage.setItem(MOCK_KEY, JSON.stringify(data))
+  return result
+}
+
 async function mockDelete(collection, { id }) {
   await new Promise((r) => setTimeout(r, 400))
   const data = mockLoad()
   data[collection] = data[collection].filter((r) => r.id !== id)
   if (collection === 'songs') {
     data.comments = data.comments.filter((c) => c.songId !== id)
+    data.meatloafs = data.meatloafs.filter((m) => m.songId !== id)
   }
   localStorage.setItem(MOCK_KEY, JSON.stringify(data))
   return { ok: true, deletedId: id }

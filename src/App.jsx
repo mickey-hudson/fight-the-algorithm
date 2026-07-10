@@ -7,6 +7,7 @@ import {
   deleteSong,
   editComment,
   deleteComment,
+  toggleMeatloaf,
   isMockMode,
 } from './api'
 import NamePrompt from './components/NamePrompt'
@@ -21,6 +22,7 @@ export default function App() {
   const [month, setMonth] = useState(currentMonthKey)
   const [songs, setSongs] = useState([])
   const [comments, setComments] = useState([])
+  const [meatloafs, setMeatloafs] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showForm, setShowForm] = useState(false)
@@ -30,6 +32,8 @@ export default function App() {
       .then((data) => {
         setSongs(data.songs)
         setComments(data.comments)
+        // Tolerate a backend that predates meatloafs (not yet redeployed).
+        setMeatloafs(data.meatloafs || [])
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
@@ -62,6 +66,18 @@ export default function App() {
     await deleteSong({ id, requester: name })
     setSongs((prev) => prev.filter((s) => s.id !== id))
     setComments((prev) => prev.filter((c) => c.songId !== id))
+    setMeatloafs((prev) => prev.filter((m) => m.songId !== id))
+  }
+
+  async function handleToggleMeatloaf(songId) {
+    const result = await toggleMeatloaf({ songId, voter: name })
+    if (result.removed) {
+      setMeatloafs((prev) =>
+        prev.filter((m) => !(m.songId === songId && m.voter === name))
+      )
+    } else {
+      setMeatloafs((prev) => [...prev, result.meatloaf])
+    }
   }
 
   async function handleEditComment(id, text) {
@@ -111,6 +127,8 @@ export default function App() {
         <SongList
           songs={songs}
           comments={comments}
+          meatloafs={meatloafs}
+          onToggleMeatloaf={handleToggleMeatloaf}
           month={month}
           onSelectMonth={setMonth}
           currentUser={name}

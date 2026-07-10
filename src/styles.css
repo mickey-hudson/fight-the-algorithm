@@ -266,7 +266,46 @@ button:disabled {
 .card-actions {
   display: flex;
   gap: 1rem;
-  align-items: baseline;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.meatloaf {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.meatloaf-button {
+  display: inline-flex;
+  align-items: center;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+}
+
+.meatloaf-button img {
+  height: 22px;
+  display: block;
+}
+
+.meatloaf-button:hover {
+  border-color: var(--accent);
+}
+
+.meatloaf-button.active {
+  border-color: var(--accent);
+  background: rgba(244, 185, 66, 0.18);
+}
+
+.meatloaf-count {
+  font-size: 0.85rem;
+}
+
+.meatloaf-voters {
+  font-size: 0.8rem;
+  color: var(--text-muted);
 }
 
 .form-actions {

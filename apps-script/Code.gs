@@ -1,18 +1,21 @@
 /**
  * Fight the Algorithm — Google Apps Script backend.
  *
- * Bound to a Google Sheet with two tabs (created by setup()):
- *   Songs:    id | song | artist | genre | recommender | notes | createdAt
- *   Comments: id | songId | author | text | createdAt
+ * Bound to a Google Sheet with three tabs (created by setup()):
+ *   Songs:     id | song | artist | genre | recommender | notes | createdAt
+ *   Comments:  id | songId | author | text | createdAt
+ *   Meatloafs: id | songId | voter | createdAt
  *
  * Deployed as a web app (Execute as: Me, Access: Anyone). See README.md.
  */
 
 var SONGS_SHEET = 'Songs';
 var COMMENTS_SHEET = 'Comments';
+var MEATLOAFS_SHEET = 'Meatloafs';
 
 var SONGS_HEADERS = ['id', 'song', 'artist', 'genre', 'recommender', 'notes', 'createdAt'];
 var COMMENTS_HEADERS = ['id', 'songId', 'author', 'text', 'createdAt'];
+var MEATLOAFS_HEADERS = ['id', 'songId', 'voter', 'createdAt'];
 
 var MAX_FIELD_LENGTH = 2000;
 
@@ -21,6 +24,7 @@ function setup() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   ensureSheet(ss, SONGS_SHEET, SONGS_HEADERS);
   ensureSheet(ss, COMMENTS_SHEET, COMMENTS_HEADERS);
+  ensureSheet(ss, MEATLOAFS_SHEET, MEATLOAFS_HEADERS);
 }
 
 function ensureSheet(ss, name, headers) {
@@ -36,6 +40,7 @@ function doGet() {
   return jsonResponse({
     songs: readAll(SONGS_SHEET, SONGS_HEADERS),
     comments: readAll(COMMENTS_SHEET, COMMENTS_HEADERS),
+    meatloafs: readAll(MEATLOAFS_SHEET, MEATLOAFS_HEADERS),
   });
 }
 
@@ -63,6 +68,8 @@ function doPost(e) {
         return jsonResponse(editComment(body));
       case 'deleteComment':
         return jsonResponse(deleteComment(body));
+      case 'toggleMeatloaf':
+        return jsonResponse(toggleMeatloaf(body));
       default:
         return jsonResponse({ error: 'Unknown action: ' + body.action });
     }
@@ -133,8 +140,41 @@ function deleteSong(body) {
   }
 
   found.sheet.deleteRow(found.rowIndex);
-  deleteCommentsForSong(body.id);
+  deleteRowsBySongId(COMMENTS_SHEET, body.id);
+  deleteRowsBySongId(MEATLOAFS_SHEET, body.id);
   return { ok: true, deletedId: body.id };
+}
+
+function toggleMeatloaf(body) {
+  var missing = requireFields(body, ['songId', 'voter']);
+  if (missing) return missing;
+
+  var songId = clean(body.songId);
+  var voter = clean(body.voter);
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(MEATLOAFS_SHEET);
+  if (!sheet) {
+    // Tab may not exist yet on sheets created before this feature.
+    ensureSheet(ss, MEATLOAFS_SHEET, MEATLOAFS_HEADERS);
+    sheet = ss.getSheetByName(MEATLOAFS_SHEET);
+  }
+
+  var values = sheet.getDataRange().getValues();
+  for (var r = 1; r < values.length; r++) {
+    if (String(values[r][1]) === songId && String(values[r][2]) === voter) {
+      sheet.deleteRow(r + 1);
+      return { removed: true, songId: songId, voter: voter };
+    }
+  }
+
+  var record = {
+    id: Utilities.getUuid(),
+    songId: songId,
+    voter: voter,
+    createdAt: new Date().toISOString(),
+  };
+  appendRecord(MEATLOAFS_SHEET, MEATLOAFS_HEADERS, record);
+  return { meatloaf: record };
 }
 
 function editComment(body) {
@@ -167,8 +207,8 @@ function deleteComment(body) {
   return { ok: true, deletedId: body.id };
 }
 
-function deleteCommentsForSong(songId) {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(COMMENTS_SHEET);
+function deleteRowsBySongId(sheetName, songId) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
   if (!sheet) return;
   var values = sheet.getDataRange().getValues();
   // Bottom-up so earlier deletions don't shift the rows still to check.

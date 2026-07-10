@@ -6,6 +6,8 @@ import { monthKey, monthLabel, currentMonthKey } from '../months'
 export default function SongList({
   songs,
   comments,
+  meatloafs,
+  onToggleMeatloaf,
   month,
   onSelectMonth,
   currentUser,
@@ -100,6 +102,8 @@ export default function SongList({
             key={song.id}
             song={song}
             comments={comments.filter((c) => c.songId === song.id)}
+            meatloafs={meatloafs.filter((m) => m.songId === song.id)}
+            onToggleMeatloaf={onToggleMeatloaf}
             currentUser={currentUser}
             onAddComment={onAddComment}
             onEditSong={onEditSong}

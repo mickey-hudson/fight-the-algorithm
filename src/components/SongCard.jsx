@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import CommentSection from './CommentSection'
 import ConfirmButton from './ConfirmButton'
+import MeatloafButton from './MeatloafButton'
 import SongForm from './SongForm'
 
 export default function SongCard({
   song,
   comments,
+  meatloafs,
+  onToggleMeatloaf,
   currentUser,
   onAddComment,
   onEditSong,
@@ -46,6 +49,11 @@ export default function SongCard({
       </p>
 
       <div className="card-actions">
+        <MeatloafButton
+          meatloafs={meatloafs}
+          currentUser={currentUser}
+          onToggle={() => onToggleMeatloaf(song.id)}
+        />
         <button className="link-button" onClick={() => setShowComments((v) => !v)}>
           {showComments
             ? 'Hide comments'
