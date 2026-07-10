@@ -12,11 +12,13 @@ import {
 import NamePrompt from './components/NamePrompt'
 import SongForm from './components/SongForm'
 import SongList from './components/SongList'
+import { currentMonthKey, monthKey } from './months'
 
 const NAME_KEY = 'fta-name'
 
 export default function App() {
   const [name, setName] = useState(() => localStorage.getItem(NAME_KEY) || '')
+  const [month, setMonth] = useState(currentMonthKey)
   const [songs, setSongs] = useState([])
   const [comments, setComments] = useState([])
   const [loading, setLoading] = useState(true)
@@ -42,6 +44,8 @@ export default function App() {
     const song = await addSong({ ...fields, recommender: name })
     setSongs((prev) => [...prev, song])
     setShowForm(false)
+    // Jump to the new song's month so the submission is always visible.
+    setMonth(monthKey(song.createdAt))
   }
 
   async function handleAddComment(songId, text) {
@@ -107,6 +111,8 @@ export default function App() {
         <SongList
           songs={songs}
           comments={comments}
+          month={month}
+          onSelectMonth={setMonth}
           currentUser={name}
           onAddComment={handleAddComment}
           onEditSong={handleEditSong}

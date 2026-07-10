@@ -87,6 +87,15 @@ const MOCK_SEED = {
       notes: 'Three songs in one. A classic for a reason.',
       createdAt: '2026-07-03T12:00:00.000Z',
     },
+    {
+      id: 'seed-3',
+      song: 'Pink Moon',
+      artist: 'Nick Drake',
+      genre: 'Folk',
+      recommender: 'Jordan',
+      notes: 'Two minutes of perfect quiet.',
+      createdAt: '2026-06-15T12:00:00.000Z',
+    },
   ],
   comments: [
     {

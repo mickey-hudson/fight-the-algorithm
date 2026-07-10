@@ -142,6 +142,43 @@ button:disabled {
   margin: 0 0 1rem;
 }
 
+.month-pills {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.35rem;
+  margin-bottom: 0.65rem;
+  scrollbar-width: thin;
+}
+
+.month-pill {
+  flex-shrink: 0;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.3rem 0.85rem;
+  font-size: 0.85rem;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.month-pill:hover {
+  border-color: var(--accent);
+}
+
+.month-pill.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.month-pill .count {
+  font-size: 0.75rem;
+  opacity: 0.65;
+  margin-left: 0.15rem;
+}
+
 .filters {
   display: flex;
   gap: 0.5rem;

@@ -1,9 +1,13 @@
 import { useMemo, useState } from 'react'
 import SongCard from './SongCard'
+import MonthPills from './MonthPills'
+import { monthKey, monthLabel, currentMonthKey } from '../months'
 
 export default function SongList({
   songs,
   comments,
+  month,
+  onSelectMonth,
   currentUser,
   onAddComment,
   onEditSong,
@@ -14,16 +18,37 @@ export default function SongList({
   const [genre, setGenre] = useState('')
   const [recommender, setRecommender] = useState('')
 
-  const genres = useMemo(
-    () => unique(songs.map((s) => s.genre)),
-    [songs]
-  )
-  const recommenders = useMemo(
-    () => unique(songs.map((s) => s.recommender)),
-    [songs]
+  // Genre/recommender choices are scoped to a month's songs, so they reset on switch.
+  function handleSelectMonth(key) {
+    setGenre('')
+    setRecommender('')
+    onSelectMonth(key)
+  }
+
+  const months = useMemo(() => {
+    const counts = new Map([[currentMonthKey(), 0]])
+    for (const s of songs) {
+      const key = monthKey(s.createdAt)
+      if (key) counts.set(key, (counts.get(key) || 0) + 1)
+    }
+    return [...counts.keys()]
+      .sort()
+      .reverse()
+      .map((key) => ({ key, label: monthLabel(key), count: counts.get(key) }))
+  }, [songs])
+
+  const inMonth = useMemo(
+    () => (month === 'all' ? songs : songs.filter((s) => monthKey(s.createdAt) === month)),
+    [songs, month]
   )
 
-  const visible = songs
+  const genres = useMemo(() => unique(inMonth.map((s) => s.genre)), [inMonth])
+  const recommenders = useMemo(
+    () => unique(inMonth.map((s) => s.recommender)),
+    [inMonth]
+  )
+
+  const visible = inMonth
     .filter((s) => !genre || s.genre === genre)
     .filter((s) => !recommender || s.recommender === recommender)
     .slice()
@@ -35,6 +60,13 @@ export default function SongList({
 
   return (
     <section>
+      <MonthPills
+        months={months}
+        total={songs.length}
+        selected={month}
+        onSelect={handleSelectMonth}
+      />
+
       <div className="filters">
         <select value={genre} onChange={(e) => setGenre(e.target.value)} aria-label="Filter by genre">
           <option value="">All genres</option>
@@ -54,7 +86,14 @@ export default function SongList({
         </select>
       </div>
 
-      {visible.length === 0 && <p className="status">Nothing matches those filters.</p>}
+      {inMonth.length === 0 && (
+        <p className="status">
+          No suggestions in {monthLabel(month)} yet — be the first!
+        </p>
+      )}
+      {inMonth.length > 0 && visible.length === 0 && (
+        <p className="status">Nothing matches those filters.</p>
+      )}
       <ul className="song-list">
         {visible.map((song) => (
           <SongCard
