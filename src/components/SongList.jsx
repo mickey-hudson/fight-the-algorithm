@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import SongCard from './SongCard'
 import MonthPills from './MonthPills'
+import LoafList from './LoafList'
 import { monthKey, monthLabel, currentMonthKey } from '../months'
 
 export default function SongList({
@@ -19,6 +20,7 @@ export default function SongList({
 }) {
   const [genre, setGenre] = useState('')
   const [recommender, setRecommender] = useState('')
+  const [view, setView] = useState('songs') // 'songs' | 'loaf' — sticky across month switches
 
   // Genre/recommender choices are scoped to a month's songs, so they reset on switch.
   function handleSelectMonth(key) {
@@ -69,50 +71,77 @@ export default function SongList({
         onSelect={handleSelectMonth}
       />
 
-      <div className="filters">
-        <select value={genre} onChange={(e) => setGenre(e.target.value)} aria-label="Filter by genre">
-          <option value="">All genres</option>
-          {genres.map((g) => (
-            <option key={g} value={g}>{g}</option>
-          ))}
-        </select>
-        <select
-          value={recommender}
-          onChange={(e) => setRecommender(e.target.value)}
-          aria-label="Filter by recommender"
+      <div className="view-toggle" role="tablist" aria-label="View">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={view === 'songs'}
+          className={view === 'songs' ? 'view-tab active' : 'view-tab'}
+          onClick={() => setView('songs')}
         >
-          <option value="">Everyone</option>
-          {recommenders.map((r) => (
-            <option key={r} value={r}>{r}</option>
-          ))}
-        </select>
+          Suggestions
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={view === 'loaf'}
+          className={view === 'loaf' ? 'view-tab active' : 'view-tab'}
+          onClick={() => setView('loaf')}
+        >
+          LOAF
+        </button>
       </div>
 
-      {inMonth.length === 0 && (
-        <p className="status">
-          No suggestions in {monthLabel(month)} yet — be the first!
-        </p>
+      {view === 'loaf' && <LoafList songs={songs} meatloafs={meatloafs} month={month} />}
+
+      {view === 'songs' && (
+        <>
+          <div className="filters">
+            <select value={genre} onChange={(e) => setGenre(e.target.value)} aria-label="Filter by genre">
+              <option value="">All genres</option>
+              {genres.map((g) => (
+                <option key={g} value={g}>{g}</option>
+              ))}
+            </select>
+            <select
+              value={recommender}
+              onChange={(e) => setRecommender(e.target.value)}
+              aria-label="Filter by recommender"
+            >
+              <option value="">Everyone</option>
+              {recommenders.map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
+          </div>
+
+          {inMonth.length === 0 && (
+            <p className="status">
+              No suggestions in {monthLabel(month)} yet — be the first!
+            </p>
+          )}
+          {inMonth.length > 0 && visible.length === 0 && (
+            <p className="status">Nothing matches those filters.</p>
+          )}
+          <ul className="song-list">
+            {visible.map((song) => (
+              <SongCard
+                key={song.id}
+                song={song}
+                comments={comments.filter((c) => c.songId === song.id)}
+                meatloafs={meatloafs.filter((m) => m.songId === song.id)}
+                onToggleMeatloaf={onToggleMeatloaf}
+                currentUser={currentUser}
+                onAddComment={onAddComment}
+                onEditSong={onEditSong}
+                onDeleteSong={onDeleteSong}
+                onEditComment={onEditComment}
+                onDeleteComment={onDeleteComment}
+              />
+            ))}
+          </ul>
+        </>
       )}
-      {inMonth.length > 0 && visible.length === 0 && (
-        <p className="status">Nothing matches those filters.</p>
-      )}
-      <ul className="song-list">
-        {visible.map((song) => (
-          <SongCard
-            key={song.id}
-            song={song}
-            comments={comments.filter((c) => c.songId === song.id)}
-            meatloafs={meatloafs.filter((m) => m.songId === song.id)}
-            onToggleMeatloaf={onToggleMeatloaf}
-            currentUser={currentUser}
-            onAddComment={onAddComment}
-            onEditSong={onEditSong}
-            onDeleteSong={onDeleteSong}
-            onEditComment={onEditComment}
-            onDeleteComment={onDeleteComment}
-          />
-        ))}
-      </ul>
     </section>
   )
 }
