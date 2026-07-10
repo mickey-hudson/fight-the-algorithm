@@ -125,13 +125,33 @@ const MOCK_SEED = {
       createdAt: '2026-07-05T12:00:00.000Z',
     },
   ],
+  // Jun 2026 intentionally has no playlist row, to exercise the "no links" case.
+  playlists: [
+    {
+      month: 'all',
+      spotifyUrl: 'https://open.spotify.com/playlist/master-demo',
+      appleMusicUrl: 'https://music.apple.com/playlist/master-demo',
+    },
+    {
+      month: '2026-07',
+      spotifyUrl: 'https://open.spotify.com/playlist/jul-demo',
+      appleMusicUrl: '',
+    },
+  ],
 }
 
 function mockLoad() {
   try {
     const stored = localStorage.getItem(MOCK_KEY)
     // Merge with empty defaults so data saved before newer collections existed still works.
-    if (stored) return { songs: [], comments: [], meatloafs: [], ...JSON.parse(stored) }
+    if (stored)
+      return {
+        songs: [],
+        comments: [],
+        meatloafs: [],
+        playlists: [],
+        ...JSON.parse(stored),
+      }
   } catch {
     // fall through to seed
   }

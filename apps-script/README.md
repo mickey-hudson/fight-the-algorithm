@@ -14,7 +14,8 @@ One-time setup, ~5 minutes. You'll end up with a web app URL to paste into `src/
    [`Code.gs`](./Code.gs) from this folder.
 3. Save (⌘S), then in the function dropdown next to **Run**, select **`setup`** and click **Run**.
    - Grant the permissions it asks for (it's your own script accessing your own sheet).
-   - This creates the **Songs** and **Comments** tabs with headers.
+   - This creates the **Songs**, **Comments**, **Meatloafs**, and **Playlists** tabs
+     with headers. (Safe to re-run after updating the script — existing data is kept.)
 
 ## 3. Deploy as a web app
 
@@ -38,6 +39,20 @@ export const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/…/exec'
 Edits to the script do **not** go live automatically. After changing code:
 **Deploy → Manage deployments → ✏️ Edit → Version: New version → Deploy.**
 The URL stays the same.
+
+## Maintaining playlist links
+
+The **Playlists** tab is edited by hand, not through the app. When a new monthly
+playlist is created on Spotify / Apple Music, add a row:
+
+| month   | spotifyUrl                       | appleMusicUrl                   |
+| ------- | -------------------------------- | ------------------------------- |
+| 2026-07 | https://open.spotify.com/…       | https://music.apple.com/…       |
+| all     | https://open.spotify.com/…       | https://music.apple.com/…       |
+
+- `month` is `YYYY-MM`; the single `all` row is the master playlist of every song.
+- Leave a URL cell blank if that platform doesn't have the playlist.
+- The app picks up changes on next load — no redeploy needed.
 
 ## Notes
 

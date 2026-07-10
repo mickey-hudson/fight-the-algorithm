@@ -23,6 +23,7 @@ export default function App() {
   const [songs, setSongs] = useState([])
   const [comments, setComments] = useState([])
   const [meatloafs, setMeatloafs] = useState([])
+  const [playlists, setPlaylists] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showForm, setShowForm] = useState(false)
@@ -32,8 +33,9 @@ export default function App() {
       .then((data) => {
         setSongs(data.songs)
         setComments(data.comments)
-        // Tolerate a backend that predates meatloafs (not yet redeployed).
+        // Tolerate a backend that predates meatloafs/playlists (not yet redeployed).
         setMeatloafs(data.meatloafs || [])
+        setPlaylists(data.playlists || [])
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
@@ -128,6 +130,7 @@ export default function App() {
           songs={songs}
           comments={comments}
           meatloafs={meatloafs}
+          playlists={playlists}
           onToggleMeatloaf={handleToggleMeatloaf}
           month={month}
           onSelectMonth={setMonth}

@@ -1,10 +1,15 @@
 /**
  * Fight the Algorithm — Google Apps Script backend.
  *
- * Bound to a Google Sheet with three tabs (created by setup()):
+ * Bound to a Google Sheet with four tabs (created by setup()):
  *   Songs:     id | song | artist | genre | recommender | notes | createdAt
  *   Comments:  id | songId | author | text | createdAt
  *   Meatloafs: id | songId | voter | createdAt
+ *   Playlists: month | spotifyUrl | appleMusicUrl
+ *
+ * Playlists is maintained by hand, not through the app: one row per monthly
+ * playlist (month = YYYY-MM, e.g. 2026-07) plus one row with month = all for
+ * the master playlist. Leave a URL cell blank if that platform has no playlist.
  *
  * Deployed as a web app (Execute as: Me, Access: Anyone). See README.md.
  */
@@ -12,10 +17,12 @@
 var SONGS_SHEET = 'Songs';
 var COMMENTS_SHEET = 'Comments';
 var MEATLOAFS_SHEET = 'Meatloafs';
+var PLAYLISTS_SHEET = 'Playlists';
 
 var SONGS_HEADERS = ['id', 'song', 'artist', 'genre', 'recommender', 'notes', 'createdAt'];
 var COMMENTS_HEADERS = ['id', 'songId', 'author', 'text', 'createdAt'];
 var MEATLOAFS_HEADERS = ['id', 'songId', 'voter', 'createdAt'];
+var PLAYLISTS_HEADERS = ['month', 'spotifyUrl', 'appleMusicUrl'];
 
 var MAX_FIELD_LENGTH = 2000;
 
@@ -25,6 +32,10 @@ function setup() {
   ensureSheet(ss, SONGS_SHEET, SONGS_HEADERS);
   ensureSheet(ss, COMMENTS_SHEET, COMMENTS_HEADERS);
   ensureSheet(ss, MEATLOAFS_SHEET, MEATLOAFS_HEADERS);
+  ensureSheet(ss, PLAYLISTS_SHEET, PLAYLISTS_HEADERS);
+  // Keep month values as typed (e.g. 2026-07) — otherwise Sheets parses them as dates.
+  var playlists = ss.getSheetByName(PLAYLISTS_SHEET);
+  playlists.getRange('A:A').setNumberFormat('@');
 }
 
 function ensureSheet(ss, name, headers) {
@@ -41,6 +52,7 @@ function doGet() {
     songs: readAll(SONGS_SHEET, SONGS_HEADERS),
     comments: readAll(COMMENTS_SHEET, COMMENTS_HEADERS),
     meatloafs: readAll(MEATLOAFS_SHEET, MEATLOAFS_HEADERS),
+    playlists: readAll(PLAYLISTS_SHEET, PLAYLISTS_HEADERS),
   });
 }
 
@@ -273,7 +285,8 @@ function readAll(sheetName, headers) {
       var cell = values[r][c];
       record[headers[c]] = cell instanceof Date ? cell.toISOString() : String(cell);
     }
-    if (record.id) records.push(record);
+    // Skip blank rows: the first column (id, or month for Playlists) is required.
+    if (record[headers[0]]) records.push(record);
   }
   return records;
 }

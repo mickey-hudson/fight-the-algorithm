@@ -2,12 +2,14 @@ import { useMemo, useState } from 'react'
 import SongCard from './SongCard'
 import MonthPills from './MonthPills'
 import LoafList from './LoafList'
+import PlaylistLinks from './PlaylistLinks'
 import { monthKey, monthLabel, currentMonthKey } from '../months'
 
 export default function SongList({
   songs,
   comments,
   meatloafs,
+  playlists,
   onToggleMeatloaf,
   month,
   onSelectMonth,
@@ -70,6 +72,8 @@ export default function SongList({
         selected={month}
         onSelect={handleSelectMonth}
       />
+
+      <PlaylistLinks playlists={playlists} month={month} />
 
       <div className="view-toggle" role="tablist" aria-label="View">
         <button
