@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   fetchAll,
   addSong,
@@ -8,18 +8,23 @@ import {
   editComment,
   deleteComment,
   toggleMeatloaf,
+  addUser,
+  editUser,
   isMockMode,
 } from './api'
-import NamePrompt from './components/NamePrompt'
+import IdentityGate from './components/IdentityGate'
+import ProfileForm from './components/ProfileForm'
 import SongForm from './components/SongForm'
 import SongList from './components/SongList'
+import { byId } from './users'
 import { currentMonthKey, monthKey } from './months'
 
-const NAME_KEY = 'fta-name'
+const USER_KEY = 'fta-user-id'
 
 export default function App() {
-  const [name, setName] = useState(() => localStorage.getItem(NAME_KEY) || '')
+  const [userId, setUserId] = useState(() => localStorage.getItem(USER_KEY) || '')
   const [month, setMonth] = useState(currentMonthKey)
+  const [users, setUsers] = useState([])
   const [songs, setSongs] = useState([])
   const [comments, setComments] = useState([])
   const [meatloafs, setMeatloafs] = useState([])
@@ -27,13 +32,14 @@ export default function App() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showForm, setShowForm] = useState(false)
+  const [editingProfile, setEditingProfile] = useState(false)
 
   useEffect(() => {
     fetchAll()
       .then((data) => {
+        setUsers(data.users || [])
         setSongs(data.songs)
         setComments(data.comments)
-        // Tolerate a backend that predates meatloafs/playlists (not yet redeployed).
         setMeatloafs(data.meatloafs || [])
         setPlaylists(data.playlists || [])
       })
@@ -41,13 +47,29 @@ export default function App() {
       .finally(() => setLoading(false))
   }, [])
 
-  function handleSetName(newName) {
-    localStorage.setItem(NAME_KEY, newName)
-    setName(newName)
+  const usersById = useMemo(() => byId(users), [users])
+  // A stored id that no longer exists (user row deleted) falls back to the gate.
+  const currentUser = usersById[userId]
+
+  function handleSelectUser(id) {
+    localStorage.setItem(USER_KEY, id)
+    setUserId(id)
+  }
+
+  async function handleRegister(fields) {
+    const user = await addUser(fields)
+    setUsers((prev) => [...prev, user])
+    handleSelectUser(user.id)
+  }
+
+  async function handleEditProfile(fields) {
+    const updated = await editUser({ id: userId, ...fields })
+    setUsers((prev) => prev.map((a) => (a.id === userId ? updated : a)))
+    setEditingProfile(false)
   }
 
   async function handleAddSong(fields) {
-    const song = await addSong({ ...fields, recommender: name })
+    const song = await addSong({ ...fields, userId })
     setSongs((prev) => [...prev, song])
     setShowForm(false)
     // Jump to the new song's month so the submission is always visible.
@@ -55,27 +77,27 @@ export default function App() {
   }
 
   async function handleAddComment(songId, text) {
-    const comment = await addComment({ songId, author: name, text })
+    const comment = await addComment({ songId, userId, text })
     setComments((prev) => [...prev, comment])
   }
 
   async function handleEditSong(id, fields) {
-    const updated = await editSong({ id, requester: name, ...fields })
+    const updated = await editSong({ id, requester: userId, ...fields })
     setSongs((prev) => prev.map((s) => (s.id === id ? updated : s)))
   }
 
   async function handleDeleteSong(id) {
-    await deleteSong({ id, requester: name })
+    await deleteSong({ id, requester: userId })
     setSongs((prev) => prev.filter((s) => s.id !== id))
     setComments((prev) => prev.filter((c) => c.songId !== id))
     setMeatloafs((prev) => prev.filter((m) => m.songId !== id))
   }
 
   async function handleToggleMeatloaf(songId) {
-    const result = await toggleMeatloaf({ songId, voter: name })
+    const result = await toggleMeatloaf({ songId, userId })
     if (result.removed) {
       setMeatloafs((prev) =>
-        prev.filter((m) => !(m.songId === songId && m.voter === name))
+        prev.filter((m) => !(m.songId === songId && m.userId === userId))
       )
     } else {
       setMeatloafs((prev) => [...prev, result.meatloaf])
@@ -83,17 +105,25 @@ export default function App() {
   }
 
   async function handleEditComment(id, text) {
-    const updated = await editComment({ id, requester: name, text })
+    const updated = await editComment({ id, requester: userId, text })
     setComments((prev) => prev.map((c) => (c.id === id ? updated : c)))
   }
 
   async function handleDeleteComment(id) {
-    await deleteComment({ id, requester: name })
+    await deleteComment({ id, requester: userId })
     setComments((prev) => prev.filter((c) => c.id !== id))
   }
 
-  if (!name) {
-    return <NamePrompt onSubmit={handleSetName} />
+  if (!currentUser) {
+    return (
+      <IdentityGate
+        users={users}
+        loading={loading}
+        error={error}
+        onSelect={handleSelectUser}
+        onRegister={handleRegister}
+      />
+    )
   }
 
   return (
@@ -104,8 +134,11 @@ export default function App() {
           <p className="tagline">Songs from friends, not the feed.</p>
         </div>
         <div className="whoami">
-          {name}{' '}
-          <button className="link-button" onClick={() => handleSetName('')}>
+          {currentUser.alias}{' '}
+          <button className="link-button" onClick={() => setEditingProfile((v) => !v)}>
+            edit profile
+          </button>{' '}
+          <button className="link-button" onClick={() => handleSelectUser('')}>
             not you?
           </button>
         </div>
@@ -115,6 +148,15 @@ export default function App() {
         <p className="mock-banner">
           Demo mode — no backend configured, data stays in this browser.
         </p>
+      )}
+
+      {editingProfile && (
+        <ProfileForm
+          initial={currentUser}
+          submitLabel="Save profile"
+          onSubmit={handleEditProfile}
+          onCancel={() => setEditingProfile(false)}
+        />
       )}
 
       <button className="primary toggle-form" onClick={() => setShowForm((v) => !v)}>
@@ -131,10 +173,11 @@ export default function App() {
           comments={comments}
           meatloafs={meatloafs}
           playlists={playlists}
+          usersById={usersById}
           onToggleMeatloaf={handleToggleMeatloaf}
           month={month}
           onSelectMonth={setMonth}
-          currentUser={name}
+          currentUserId={userId}
           onAddComment={handleAddComment}
           onEditSong={handleEditSong}
           onDeleteSong={handleDeleteSong}

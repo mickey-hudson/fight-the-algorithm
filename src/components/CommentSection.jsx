@@ -1,7 +1,15 @@
 import { useState } from 'react'
 import ConfirmButton from './ConfirmButton'
+import { aliasOf } from '../users'
 
-export default function CommentSection({ comments, currentUser, onAdd, onEdit, onDelete }) {
+export default function CommentSection({
+  comments,
+  usersById,
+  currentUserId,
+  onAdd,
+  onEdit,
+  onDelete,
+}) {
   const [text, setText] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -32,7 +40,8 @@ export default function CommentSection({ comments, currentUser, onAdd, onEdit, o
         <Comment
           key={c.id}
           comment={c}
-          isOwner={c.author === currentUser}
+          alias={aliasOf(usersById, c.userId)}
+          isOwner={c.userId === currentUserId}
           onEdit={onEdit}
           onDelete={onDelete}
         />
@@ -54,7 +63,7 @@ export default function CommentSection({ comments, currentUser, onAdd, onEdit, o
   )
 }
 
-function Comment({ comment, isOwner, onEdit, onDelete }) {
+function Comment({ comment, alias, isOwner, onEdit, onDelete }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(comment.text)
   const [saving, setSaving] = useState(false)
@@ -106,7 +115,7 @@ function Comment({ comment, isOwner, onEdit, onDelete }) {
 
   return (
     <p className="comment">
-      <strong>{comment.author}</strong> {comment.text}
+      <strong>{alias}</strong> {comment.text}
       {isOwner && (
         <span className="comment-actions">
           <button className="link-button" onClick={() => setEditing(true)}>

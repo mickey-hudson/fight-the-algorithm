@@ -4,16 +4,18 @@ import MonthPills from './MonthPills'
 import LoafList from './LoafList'
 import PlaylistLinks from './PlaylistLinks'
 import { monthKey, monthLabel, currentMonthKey } from '../months'
+import { aliasOf } from '../users'
 
 export default function SongList({
   songs,
   comments,
   meatloafs,
   playlists,
+  usersById,
   onToggleMeatloaf,
   month,
   onSelectMonth,
-  currentUser,
+  currentUserId,
   onAddComment,
   onEditSong,
   onDeleteSong,
@@ -21,13 +23,13 @@ export default function SongList({
   onDeleteComment,
 }) {
   const [genre, setGenre] = useState('')
-  const [recommender, setRecommender] = useState('')
+  const [recommenderId, setRecommenderId] = useState('')
   const [view, setView] = useState('songs') // 'songs' | 'loaf' — sticky across month switches
 
   // Genre/recommender choices are scoped to a month's songs, so they reset on switch.
   function handleSelectMonth(key) {
     setGenre('')
-    setRecommender('')
+    setRecommenderId('')
     onSelectMonth(key)
   }
 
@@ -49,14 +51,16 @@ export default function SongList({
   )
 
   const genres = useMemo(() => unique(inMonth.map((s) => s.genre)), [inMonth])
-  const recommenders = useMemo(
-    () => unique(inMonth.map((s) => s.recommender)),
-    [inMonth]
-  )
+  const recommenders = useMemo(() => {
+    const ids = [...new Set(inMonth.map((s) => s.userId).filter(Boolean))]
+    return ids
+      .map((id) => ({ id, alias: aliasOf(usersById, id) }))
+      .sort((a, b) => a.alias.localeCompare(b.alias))
+  }, [inMonth, usersById])
 
   const visible = inMonth
     .filter((s) => !genre || s.genre === genre)
-    .filter((s) => !recommender || s.recommender === recommender)
+    .filter((s) => !recommenderId || s.userId === recommenderId)
     .slice()
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
@@ -96,7 +100,9 @@ export default function SongList({
         </button>
       </div>
 
-      {view === 'loaf' && <LoafList songs={songs} meatloafs={meatloafs} month={month} />}
+      {view === 'loaf' && (
+        <LoafList songs={songs} meatloafs={meatloafs} usersById={usersById} month={month} />
+      )}
 
       {view === 'songs' && (
         <>
@@ -108,13 +114,13 @@ export default function SongList({
               ))}
             </select>
             <select
-              value={recommender}
-              onChange={(e) => setRecommender(e.target.value)}
+              value={recommenderId}
+              onChange={(e) => setRecommenderId(e.target.value)}
               aria-label="Filter by recommender"
             >
               <option value="">Everyone</option>
               {recommenders.map((r) => (
-                <option key={r} value={r}>{r}</option>
+                <option key={r.id} value={r.id}>{r.alias}</option>
               ))}
             </select>
           </div>
@@ -134,8 +140,9 @@ export default function SongList({
                 song={song}
                 comments={comments.filter((c) => c.songId === song.id)}
                 meatloafs={meatloafs.filter((m) => m.songId === song.id)}
+                usersById={usersById}
                 onToggleMeatloaf={onToggleMeatloaf}
-                currentUser={currentUser}
+                currentUserId={currentUserId}
                 onAddComment={onAddComment}
                 onEditSong={onEditSong}
                 onDeleteSong={onDeleteSong}

@@ -68,18 +68,54 @@ export async function toggleMeatloaf(fields) {
   return post({ action: 'toggleMeatloaf', ...fields })
 }
 
+export async function addUser(fields) {
+  if (isMockMode) return mockAddUser(fields)
+  const data = await post({ action: 'addUser', ...fields })
+  return data.user
+}
+
+export async function editUser(fields) {
+  if (isMockMode) return mockEditUser(fields)
+  const data = await post({ action: 'editUser', ...fields })
+  return data.user
+}
+
 // --- Mock backend (used until APPS_SCRIPT_URL is configured) ---
 
-const MOCK_KEY = 'fta-mock-data'
+// v2: user name strings were replaced by userId references.
+const MOCK_KEY = 'fta-mock-data-v2'
 
 const MOCK_SEED = {
+  users: [
+    {
+      id: 'seed-u1',
+      firstName: 'Sam',
+      lastName: '',
+      alias: 'DJ Samwise',
+      createdAt: '2026-06-01T12:00:00.000Z',
+    },
+    {
+      id: 'seed-u2',
+      firstName: 'Alex',
+      lastName: 'Chen',
+      alias: 'DJ Loaf',
+      createdAt: '2026-06-01T12:00:00.000Z',
+    },
+    {
+      id: 'seed-u3',
+      firstName: 'Jordan',
+      lastName: 'Rivera',
+      alias: 'Moonchild',
+      createdAt: '2026-06-01T12:00:00.000Z',
+    },
+  ],
   songs: [
     {
       id: 'seed-1',
       song: 'Pink Pony Club',
       artist: 'Chappell Roan',
       genre: 'Pop',
-      recommender: 'Sam',
+      userId: 'seed-u1',
       notes: 'The key change at the end gets me every time.',
       createdAt: '2026-07-01T12:00:00.000Z',
     },
@@ -88,7 +124,7 @@ const MOCK_SEED = {
       song: 'Paranoid Android',
       artist: 'Radiohead',
       genre: 'Rock',
-      recommender: 'Alex',
+      userId: 'seed-u2',
       notes: 'Three songs in one. A classic for a reason.',
       createdAt: '2026-07-03T12:00:00.000Z',
     },
@@ -97,7 +133,7 @@ const MOCK_SEED = {
       song: 'Pink Moon',
       artist: 'Nick Drake',
       genre: 'Folk',
-      recommender: 'Jordan',
+      userId: 'seed-u3',
       notes: 'Two minutes of perfect quiet.',
       createdAt: '2026-06-15T12:00:00.000Z',
     },
@@ -106,7 +142,7 @@ const MOCK_SEED = {
     {
       id: 'seed-c1',
       songId: 'seed-2',
-      author: 'Sam',
+      userId: 'seed-u1',
       text: 'Saw this live in 2019, unreal.',
       createdAt: '2026-07-04T12:00:00.000Z',
     },
@@ -115,13 +151,13 @@ const MOCK_SEED = {
     {
       id: 'seed-m1',
       songId: 'seed-2',
-      voter: 'Sam',
+      userId: 'seed-u1',
       createdAt: '2026-07-04T12:00:00.000Z',
     },
     {
       id: 'seed-m2',
       songId: 'seed-2',
-      voter: 'Jordan',
+      userId: 'seed-u3',
       createdAt: '2026-07-05T12:00:00.000Z',
     },
   ],
@@ -146,6 +182,7 @@ function mockLoad() {
     // Merge with empty defaults so data saved before newer collections existed still works.
     if (stored)
       return {
+        users: [],
         songs: [],
         comments: [],
         meatloafs: [],
@@ -186,19 +223,21 @@ async function mockEdit(collection, { id, requester, ...fields }) {
   return record
 }
 
-async function mockToggleMeatloaf({ songId, voter }) {
+async function mockToggleMeatloaf({ songId, userId }) {
   await new Promise((r) => setTimeout(r, 400))
   const data = mockLoad()
-  const existing = data.meatloafs.find((m) => m.songId === songId && m.voter === voter)
+  const existing = data.meatloafs.find(
+    (m) => m.songId === songId && m.userId === userId
+  )
   let result
   if (existing) {
     data.meatloafs = data.meatloafs.filter((m) => m !== existing)
-    result = { removed: true, songId, voter }
+    result = { removed: true, songId, userId }
   } else {
     const record = {
       id: crypto.randomUUID(),
       songId,
-      voter,
+      userId,
       createdAt: new Date().toISOString(),
     }
     data.meatloafs.push(record)
@@ -206,6 +245,31 @@ async function mockToggleMeatloaf({ songId, voter }) {
   }
   localStorage.setItem(MOCK_KEY, JSON.stringify(data))
   return result
+}
+
+function mockAliasTaken(data, alias, excludeId) {
+  const wanted = alias.trim().toLowerCase()
+  return data.users.some(
+    (a) => a.id !== excludeId && a.alias.toLowerCase() === wanted
+  )
+}
+
+async function mockAddUser(fields) {
+  const data = mockLoad()
+  if (mockAliasTaken(data, fields.alias, null)) {
+    await new Promise((r) => setTimeout(r, 400))
+    throw new Error('That DJ alias is already taken')
+  }
+  return mockAdd('users', fields)
+}
+
+async function mockEditUser({ id, ...fields }) {
+  const data = mockLoad()
+  if (mockAliasTaken(data, fields.alias, id)) {
+    await new Promise((r) => setTimeout(r, 400))
+    throw new Error('That DJ alias is already taken')
+  }
+  return mockEdit('users', { id, ...fields })
 }
 
 async function mockDelete(collection, { id }) {

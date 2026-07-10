@@ -1,10 +1,11 @@
 import meatloafIcon from '../assets/meatloaf.png'
 import { monthLabel } from '../months'
 import { monthlyLoafList, allTimeLoafList, ALL_TIME_CAP } from '../loaf'
+import { aliasOf } from '../users'
 
 const MEDALS = ['🥇', '🥈', '🥉']
 
-export default function LoafList({ songs, meatloafs, month }) {
+export default function LoafList({ songs, meatloafs, usersById, month }) {
   const allTime = month === 'all'
   const entries = allTime
     ? allTimeLoafList(songs, meatloafs)
@@ -36,7 +37,7 @@ export default function LoafList({ songs, meatloafs, month }) {
             <span className="loaf-song">
               <span className="loaf-title">{song.song}</span>
               <span className="loaf-artist">
-                {song.artist} · from {song.recommender}
+                {song.artist} · from {aliasOf(usersById, song.userId)}
               </span>
             </span>
             <span className="loaf-count">

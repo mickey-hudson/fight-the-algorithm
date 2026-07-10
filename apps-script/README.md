@@ -14,8 +14,9 @@ One-time setup, ~5 minutes. You'll end up with a web app URL to paste into `src/
    [`Code.gs`](./Code.gs) from this folder.
 3. Save (⌘S), then in the function dropdown next to **Run**, select **`setup`** and click **Run**.
    - Grant the permissions it asks for (it's your own script accessing your own sheet).
-   - This creates the **Songs**, **Comments**, **Meatloafs**, and **Playlists** tabs
-     with headers. (Safe to re-run after updating the script — existing data is kept.)
+   - This creates the **Users**, **Songs**, **Comments**, **Meatloafs**, and
+     **Playlists** tabs with headers. (Safe to re-run after updating the script —
+     existing data is kept.)
 
 ## 3. Deploy as a web app
 
@@ -39,6 +40,22 @@ export const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/…/exec'
 Edits to the script do **not** go live automatically. After changing code:
 **Deploy → Manage deployments → ✏️ Edit → Version: New version → Deploy.**
 The URL stays the same.
+
+## Migrating name-based rows to user ids
+
+Sheets from before the Users tab hold plain names in the Songs/Comments/Meatloafs
+author columns. To convert them, after updating the script and re-running `setup()`:
+
+1. *(Optional but recommended)* Add rows to the **Users** tab yourself for each
+   person first, with their real first/last name and DJ alias. Give each row an `id`
+   (any unique string works). Skip this step and the migration invents users instead
+   (see below).
+2. Run **`migrateToUsers`** from the function dropdown. Every name found in the three
+   tabs is matched case-insensitively against Users `firstName`, `alias`, and
+   `"firstName lastName"`; matched names become that user's id. Unmatched names get a
+   new user with `firstName` = `alias` = the old name — people can fix their profile
+   in the app afterwards.
+3. Safe to re-run: cells already holding a user id are left alone.
 
 ## Maintaining playlist links
 

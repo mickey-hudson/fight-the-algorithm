@@ -3,13 +3,15 @@ import CommentSection from './CommentSection'
 import ConfirmButton from './ConfirmButton'
 import MeatloafButton from './MeatloafButton'
 import SongForm from './SongForm'
+import { aliasOf } from '../users'
 
 export default function SongCard({
   song,
   comments,
   meatloafs,
+  usersById,
   onToggleMeatloaf,
-  currentUser,
+  currentUserId,
   onAddComment,
   onEditSong,
   onDeleteSong,
@@ -18,7 +20,7 @@ export default function SongCard({
 }) {
   const [showComments, setShowComments] = useState(false)
   const [editing, setEditing] = useState(false)
-  const isOwner = song.recommender === currentUser
+  const isOwner = song.userId === currentUserId
 
   if (editing) {
     return (
@@ -45,13 +47,15 @@ export default function SongCard({
       <p className="song-artist">{song.artist}</p>
       {song.notes && <p className="song-notes">“{song.notes}”</p>}
       <p className="song-meta">
-        from <strong>{song.recommender}</strong> · {formatDate(song.createdAt)}
+        from <strong>{aliasOf(usersById, song.userId)}</strong> ·{' '}
+        {formatDate(song.createdAt)}
       </p>
 
       <div className="card-actions">
         <MeatloafButton
           meatloafs={meatloafs}
-          currentUser={currentUser}
+          usersById={usersById}
+          currentUserId={currentUserId}
           onToggle={() => onToggleMeatloaf(song.id)}
         />
         <button className="link-button" onClick={() => setShowComments((v) => !v)}>
@@ -78,7 +82,8 @@ export default function SongCard({
       {showComments && (
         <CommentSection
           comments={comments}
-          currentUser={currentUser}
+          usersById={usersById}
+          currentUserId={currentUserId}
           onAdd={(text) => onAddComment(song.id, text)}
           onEdit={onEditComment}
           onDelete={onDeleteComment}

@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import meatloafIcon from '../assets/meatloaf.png'
+import { aliasOf } from '../users'
 
-export default function MeatloafButton({ meatloafs, currentUser, onToggle }) {
+export default function MeatloafButton({ meatloafs, usersById, currentUserId, onToggle }) {
   const [busy, setBusy] = useState(false)
   const [showVoters, setShowVoters] = useState(false)
   const [error, setError] = useState('')
 
-  const mine = meatloafs.some((m) => m.voter === currentUser)
-  const voters = meatloafs.map((m) => m.voter)
+  const mine = meatloafs.some((m) => m.userId === currentUserId)
+  const voters = meatloafs.map((m) => aliasOf(usersById, m.userId))
 
   async function handleToggle() {
     setBusy(true)
