@@ -96,6 +96,8 @@ function doPost(e) {
         return jsonResponse(deleteComment(body));
       case 'toggleMeatloaf':
         return jsonResponse(toggleMeatloaf(body));
+      case 'importLegacy':
+        return jsonResponse(importLegacy(body));
       default:
         return jsonResponse({ error: 'Unknown action: ' + body.action });
     }
@@ -357,6 +359,56 @@ function readAll(sheetName, headers) {
     if (record[headers[0]]) records.push(record);
   }
   return records;
+}
+
+/**
+ * Bulk append for the one-time legacy CSV import (scripts/migrate-legacy.mjs).
+ * Append-only and idempotent: records whose id already exists are skipped, so
+ * the script can be re-run safely. Records arrive with their own ids and
+ * historical createdAt values (that's the point — the app's month crates come
+ * from createdAt). All userIds must exist in the Users tab.
+ */
+function importLegacy(body) {
+  var result = {
+    songs: appendLegacyRecords(SONGS_SHEET, SONGS_HEADERS, body.songs || []),
+    comments: appendLegacyRecords(COMMENTS_SHEET, COMMENTS_HEADERS, body.comments || []),
+  };
+  return result;
+}
+
+function appendLegacyRecords(sheetName, headers, records) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+  if (!sheet) throw new Error('Sheet "' + sheetName + '" not found — run setup() first');
+
+  var existingIds = {};
+  readAll(sheetName, headers).forEach(function (r) {
+    existingIds[r.id] = true;
+  });
+  var userIds = {};
+  readAll(USERS_SHEET, USERS_HEADERS).forEach(function (u) {
+    userIds[u.id] = true;
+  });
+
+  var rows = [];
+  var skipped = 0;
+  var errors = [];
+  records.forEach(function (record) {
+    if (!record.id || existingIds[record.id]) {
+      skipped++;
+      return;
+    }
+    if (!userIds[record.userId]) {
+      errors.push('Unknown userId for record ' + record.id);
+      return;
+    }
+    rows.push(headers.map(function (h) { return clean(record[h]); }));
+    existingIds[record.id] = true;
+  });
+
+  if (rows.length > 0) {
+    sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, headers.length).setValues(rows);
+  }
+  return { imported: rows.length, skipped: skipped, errors: errors };
 }
 
 /**
