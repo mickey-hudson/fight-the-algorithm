@@ -134,13 +134,18 @@ export default function App() {
           <p className="tagline">Songs from friends, not the feed.</p>
         </div>
         <div className="whoami">
-          {currentUser.alias}{' '}
-          <button className="link-button" onClick={() => setEditingProfile((v) => !v)}>
-            edit profile
-          </button>{' '}
-          <button className="link-button" onClick={() => handleSelectUser('')}>
-            not you?
-          </button>
+          <span className="whoami-identity">
+            Signed in as <strong>{currentUser.alias}</strong>
+          </span>
+          <span className="whoami-actions">
+            <button className="link-button" onClick={() => setEditingProfile((v) => !v)}>
+              Edit profile
+            </button>
+            <span aria-hidden="true">·</span>
+            <button className="link-button" onClick={() => handleSelectUser('')}>
+              Not you?
+            </button>
+          </span>
         </div>
       </header>
 
