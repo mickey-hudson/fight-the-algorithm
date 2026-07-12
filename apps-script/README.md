@@ -57,6 +57,19 @@ author columns. To convert them, after updating the script and re-running `setup
    in the app afterwards.
 3. Safe to re-run: cells already holding a user id are left alone.
 
+## Tracking which songs are in the playlists
+
+The Songs tab has an `inPlaylists` column tracking whether the playlist curator
+has copied the song into the Spotify / Apple Music playlists. The app writes it —
+the curator (the user id in `ADMIN_USER_ID` at the top of `Code.gs`, mirrored in
+`src/config.js`) gets a toggle on each song card.
+
+Adding this to an existing sheet: update the script and re-run `setup()`, which
+adds the `inPlaylists` header to the Songs tab. Existing rows stay blank, and
+blank is treated as **already in the playlists** — only new songs (written with
+`false`) show up as not-yet-added. To flag an old song as missing, set its cell
+to `false` by hand.
+
 ## Maintaining playlist links
 
 The **Playlists** tab is edited by hand, not through the app. When a new monthly

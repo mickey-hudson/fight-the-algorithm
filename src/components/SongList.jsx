@@ -16,6 +16,8 @@ export default function SongList({
   month,
   onSelectMonth,
   currentUserId,
+  isAdmin,
+  onSetInPlaylists,
   onAddComment,
   onEditSong,
   onDeleteSong,
@@ -143,6 +145,8 @@ export default function SongList({
                 usersById={usersById}
                 onToggleMeatloaf={onToggleMeatloaf}
                 currentUserId={currentUserId}
+                isAdmin={isAdmin}
+                onSetInPlaylists={onSetInPlaylists}
                 onAddComment={onAddComment}
                 onEditSong={onEditSong}
                 onDeleteSong={onDeleteSong}

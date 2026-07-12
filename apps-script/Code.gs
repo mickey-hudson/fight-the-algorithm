@@ -3,10 +3,16 @@
  *
  * Bound to a Google Sheet with five tabs (created by setup()):
  *   Users:     id | firstName | lastName | alias | createdAt
- *   Songs:     id | song | artist | genre | userId | notes | createdAt
+ *   Songs:     id | song | artist | genre | userId | notes | createdAt | inPlaylists
  *   Comments:  id | songId | userId | text | createdAt
  *   Meatloafs: id | songId | userId | createdAt
  *   Playlists: month | spotifyUrl | appleMusicUrl
+ *
+ * Songs.inPlaylists tracks whether the playlist curator has copied the song
+ * into the Spotify / Apple Music playlists. New songs get 'false'; rows from
+ * before the column existed are blank, which the app treats as already added.
+ * Only the curator (ADMIN_USER_ID) may change it, via the setInPlaylists
+ * action.
  *
  * Songs, comments, and meatloafs reference their user by id, so renaming a
  * person (or changing their DJ alias) never orphans their rows. Sheets created
@@ -27,12 +33,17 @@ var MEATLOAFS_SHEET = 'Meatloafs';
 var PLAYLISTS_SHEET = 'Playlists';
 
 var USERS_HEADERS = ['id', 'firstName', 'lastName', 'alias', 'createdAt'];
-var SONGS_HEADERS = ['id', 'song', 'artist', 'genre', 'userId', 'notes', 'createdAt'];
+var SONGS_HEADERS = ['id', 'song', 'artist', 'genre', 'userId', 'notes', 'createdAt', 'inPlaylists'];
 var COMMENTS_HEADERS = ['id', 'songId', 'userId', 'text', 'createdAt'];
 var MEATLOAFS_HEADERS = ['id', 'songId', 'userId', 'createdAt'];
 var PLAYLISTS_HEADERS = ['month', 'spotifyUrl', 'appleMusicUrl'];
 
 var MAX_FIELD_LENGTH = 2000;
+
+// Chuck — curates the Spotify / Apple Music playlists. Identity is honor
+// system like everywhere else; this just keeps the toggle off everyone
+// else's cards.
+var ADMIN_USER_ID = '70327eee-132f-4381-8aac-aaec1effa461';
 
 /** Run this once from the editor to create the tabs with headers. */
 function setup() {
@@ -96,6 +107,8 @@ function doPost(e) {
         return jsonResponse(deleteComment(body));
       case 'toggleMeatloaf':
         return jsonResponse(toggleMeatloaf(body));
+      case 'setInPlaylists':
+        return jsonResponse(setInPlaylists(body));
       case 'importLegacy':
         return jsonResponse(importLegacy(body));
       default:
@@ -170,8 +183,25 @@ function addSong(body) {
     userId: clean(body.userId),
     notes: clean(body.notes),
     createdAt: new Date().toISOString(),
+    inPlaylists: 'false',
   };
   appendRecord(SONGS_SHEET, SONGS_HEADERS, record);
+  return { song: record };
+}
+
+function setInPlaylists(body) {
+  var missing = requireFields(body, ['id', 'requester']);
+  if (missing) return missing;
+  if (clean(body.requester) !== ADMIN_USER_ID) {
+    return { error: 'Only the playlist curator can do that' };
+  }
+
+  var found = findRowById(SONGS_SHEET, SONGS_HEADERS, body.id);
+  if (!found) return { error: 'Song not found' };
+
+  var record = found.record;
+  record.inPlaylists = clean(body.inPlaylists) === 'true' ? 'true' : 'false';
+  writeRecord(found, SONGS_HEADERS, record);
   return { song: record };
 }
 
@@ -307,12 +337,7 @@ function findRowById(sheetName, headers, id) {
   var values = sheet.getDataRange().getValues();
   for (var r = 1; r < values.length; r++) {
     if (String(values[r][0]) === id) {
-      var record = {};
-      for (var c = 0; c < headers.length; c++) {
-        var cell = values[r][c];
-        record[headers[c]] = cell instanceof Date ? cell.toISOString() : String(cell);
-      }
-      return { sheet: sheet, rowIndex: r + 1, record: record };
+      return { sheet: sheet, rowIndex: r + 1, record: rowToRecord(values[r], headers) };
     }
   }
   return null;
@@ -350,15 +375,22 @@ function readAll(sheetName, headers) {
   var values = sheet.getDataRange().getValues();
   var records = [];
   for (var r = 1; r < values.length; r++) {
-    var record = {};
-    for (var c = 0; c < headers.length; c++) {
-      var cell = values[r][c];
-      record[headers[c]] = cell instanceof Date ? cell.toISOString() : String(cell);
-    }
+    var record = rowToRecord(values[r], headers);
     // Skip blank rows: the first column (id, or month for Playlists) is required.
     if (record[headers[0]]) records.push(record);
   }
   return records;
+}
+
+function rowToRecord(row, headers) {
+  var record = {};
+  for (var c = 0; c < headers.length; c++) {
+    // Columns added after the sheet was created may not exist yet on old
+    // sheets; read them as blank until setup() is re-run.
+    var cell = c < row.length ? row[c] : '';
+    record[headers[c]] = cell instanceof Date ? cell.toISOString() : String(cell);
+  }
+  return record;
 }
 
 /**

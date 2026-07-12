@@ -12,6 +12,8 @@ export default function SongCard({
   usersById,
   onToggleMeatloaf,
   currentUserId,
+  isAdmin,
+  onSetInPlaylists,
   onAddComment,
   onEditSong,
   onDeleteSong,
@@ -21,6 +23,7 @@ export default function SongCard({
   const [showComments, setShowComments] = useState(false)
   const [editing, setEditing] = useState(false)
   const isOwner = song.userId === currentUserId
+  const added = inPlaylists(song)
 
   if (editing) {
     return (
@@ -77,6 +80,16 @@ export default function SongCard({
             />
           </>
         )}
+        {isAdmin && (
+          <button
+            className={added ? 'playlist-toggle added' : 'playlist-toggle'}
+            aria-pressed={added}
+            title="Track whether you've added this song to the Spotify / Apple Music playlists"
+            onClick={() => onSetInPlaylists(song.id, !added)}
+          >
+            {added ? '✓ In playlists' : 'Not in playlists'}
+          </button>
+        )}
       </div>
 
       {showComments && (
@@ -91,6 +104,13 @@ export default function SongCard({
       )}
     </li>
   )
+}
+
+// Songs from before the inPlaylists column existed have a blank/missing value
+// and are assumed to already be in the playlists; only an explicit false means
+// "not added yet".
+function inPlaylists(song) {
+  return String(song.inPlaylists ?? '').toLowerCase() !== 'false'
 }
 
 function formatDate(iso) {

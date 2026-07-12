@@ -8,10 +8,12 @@ import {
   editComment,
   deleteComment,
   toggleMeatloaf,
+  setInPlaylists,
   addUser,
   editUser,
   isMockMode,
 } from './api'
+import { ADMIN_USER_IDS } from './config'
 import IdentityGate from './components/IdentityGate'
 import ProfileForm from './components/ProfileForm'
 import SongForm from './components/SongForm'
@@ -50,6 +52,7 @@ export default function App() {
   const usersById = useMemo(() => byId(users), [users])
   // A stored id that no longer exists (user row deleted) falls back to the gate.
   const currentUser = usersById[userId]
+  const isAdmin = ADMIN_USER_IDS.includes(userId)
 
   function handleSelectUser(id) {
     localStorage.setItem(USER_KEY, id)
@@ -102,6 +105,15 @@ export default function App() {
     } else {
       setMeatloafs((prev) => [...prev, result.meatloaf])
     }
+  }
+
+  async function handleSetInPlaylists(songId, value) {
+    const updated = await setInPlaylists({
+      id: songId,
+      requester: userId,
+      inPlaylists: value ? 'true' : 'false',
+    })
+    setSongs((prev) => prev.map((s) => (s.id === songId ? updated : s)))
   }
 
   async function handleEditComment(id, text) {
@@ -183,6 +195,8 @@ export default function App() {
           month={month}
           onSelectMonth={setMonth}
           currentUserId={userId}
+          isAdmin={isAdmin}
+          onSetInPlaylists={handleSetInPlaylists}
           onAddComment={handleAddComment}
           onEditSong={handleEditSong}
           onDeleteSong={handleDeleteSong}

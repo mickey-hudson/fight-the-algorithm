@@ -449,6 +449,28 @@ button:disabled {
   color: var(--text-muted);
 }
 
+/* Admin-only pill tracking whether the song is in the streaming playlists. */
+.playlist-toggle {
+  margin-left: auto;
+  background: var(--surface-raised);
+  border: 1px dashed var(--text-muted);
+  border-radius: 999px;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.playlist-toggle:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.playlist-toggle.added {
+  border: 1px solid var(--accent);
+  background: rgba(244, 185, 66, 0.18);
+  color: var(--accent);
+}
+
 .form-actions {
   display: flex;
   gap: 1rem;

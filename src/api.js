@@ -30,7 +30,8 @@ export async function fetchAll() {
 }
 
 export async function addSong(fields) {
-  if (isMockMode) return mockAdd('songs', fields)
+  // The real backend defaults inPlaylists; the mock has to do it itself.
+  if (isMockMode) return mockAdd('songs', { inPlaylists: 'false', ...fields })
   const data = await post({ action: 'addSong', ...fields })
   return data.song
 }
@@ -61,6 +62,12 @@ export async function editComment(fields) {
 export async function deleteComment(fields) {
   if (isMockMode) return mockDelete('comments', fields)
   return post({ action: 'deleteComment', ...fields })
+}
+
+export async function setInPlaylists(fields) {
+  if (isMockMode) return mockEdit('songs', fields)
+  const data = await post({ action: 'setInPlaylists', ...fields })
+  return data.song
 }
 
 export async function toggleMeatloaf(fields) {
