@@ -17,16 +17,18 @@ description: How to run and verify fight-the-algorithm changes in a real browser
 
 - Use the claude-in-chrome tools against the localhost URL.
 - Skip the identity gate and reset to seed data in one shot:
-  `localStorage.removeItem('fta-mock-data-v2'); localStorage.setItem('fta-user-id','seed-u1'); location.reload()`
+  `localStorage.removeItem('fta-mock-data-v3'); localStorage.setItem('fta-user-id','seed-u1'); location.reload()`
   (seed-u1 = Sam aka DJ Samwise; or clear `fta-user-id` to exercise the picker.)
 - Seed data (see `MOCK_SEED` in `src/api.js`): 3 users, 3 songs — Paranoid Android
-  (Jul, 2 meatloafs), Pink Pony Club (Jul, 0), Pink Moon (Jun, 0) — dates fixed in 2026.
-- To test volume/cap behavior, write a custom `fta-mock-data-v2` blob to localStorage
-  and reload (shape: `{ users, songs, comments, meatloafs, playlists }`, see `MOCK_SEED`).
+  (Jul, 1 L.O.A.F. comment), Pink Pony Club (Jul, 1 L.O.A.F. + First Timer comment),
+  Pink Moon (Jun, none) — dates fixed in 2026.
+- To test volume behavior, write a custom `fta-mock-data-v3` blob to localStorage
+  and reload (shape: `{ users, songs, comments, playlists }`; comments carry
+  boolean `loaf` / `firstTimer` badge flags — see `MOCK_SEED`).
 
 ## Cleanup
 
-- `localStorage.removeItem('fta-mock-data-v2'); localStorage.removeItem('fta-user-id')`
+- `localStorage.removeItem('fta-mock-data-v3'); localStorage.removeItem('fta-user-id')`
 - Kill the vite process, restore `src/config.js`, confirm with `git status` that
   only intended files are dirty.
 

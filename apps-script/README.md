@@ -14,9 +14,9 @@ One-time setup, ~5 minutes. You'll end up with a web app URL to paste into `src/
    [`Code.gs`](./Code.gs) from this folder.
 3. Save (⌘S), then in the function dropdown next to **Run**, select **`setup`** and click **Run**.
    - Grant the permissions it asks for (it's your own script accessing your own sheet).
-   - This creates the **Users**, **Songs**, **Comments**, **Meatloafs**, and
-     **Playlists** tabs with headers. (Safe to re-run after updating the script —
-     existing data is kept.)
+   - This creates the **Users**, **Songs**, **Comments**, and **Playlists** tabs
+     with headers. (Safe to re-run after updating the script — existing data is
+     kept.)
 
 ## 3. Deploy as a web app
 
@@ -69,6 +69,19 @@ adds the `inPlaylists` header to the Songs tab. Existing rows stay blank, and
 blank is treated as **already in the playlists** — only new songs (written with
 `false`) show up as not-yet-added. To flag an old song as missing, set its cell
 to `false` by hand.
+
+## L.O.A.F. / First Timer comment badges
+
+Comments carry two badge columns, `loaf` ("Listener Obsessed, Absolute Fire") and
+`firstTimer` (the song was new to the commenter), written as `true`/`false` when
+the comment is posted.
+
+Adding these to an existing sheet: update the script and re-run `setup()`, which
+appends the two headers to the Comments tab, then redeploy. Rows from before the
+columns existed stay blank, which the app treats as false.
+
+This replaced the per-song meatloaf votes. An old **Meatloafs** tab is no longer
+read or written — keep it as an archive or delete it, either is fine.
 
 ## Maintaining playlist links
 

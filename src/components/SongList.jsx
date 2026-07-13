@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import SongCard from './SongCard'
 import MonthPills from './MonthPills'
-import LoafList from './LoafList'
+import LoafLog from './LoafLog'
 import PlaylistLinks from './PlaylistLinks'
 import { monthKey, monthLabel, currentMonthKey } from '../months'
 import { aliasOf } from '../users'
@@ -9,10 +9,8 @@ import { aliasOf } from '../users'
 export default function SongList({
   songs,
   comments,
-  meatloafs,
   playlists,
   usersById,
-  onToggleMeatloaf,
   month,
   onSelectMonth,
   currentUserId,
@@ -98,12 +96,12 @@ export default function SongList({
           className={view === 'loaf' ? 'view-tab active' : 'view-tab'}
           onClick={() => setView('loaf')}
         >
-          LOAF
+          Loaf Log
         </button>
       </div>
 
       {view === 'loaf' && (
-        <LoafList songs={songs} meatloafs={meatloafs} usersById={usersById} month={month} />
+        <LoafLog songs={songs} comments={comments} usersById={usersById} month={month} />
       )}
 
       {view === 'songs' && (
@@ -141,9 +139,7 @@ export default function SongList({
                 key={song.id}
                 song={song}
                 comments={comments.filter((c) => c.songId === song.id)}
-                meatloafs={meatloafs.filter((m) => m.songId === song.id)}
                 usersById={usersById}
-                onToggleMeatloaf={onToggleMeatloaf}
                 currentUserId={currentUserId}
                 isAdmin={isAdmin}
                 onSetInPlaylists={onSetInPlaylists}

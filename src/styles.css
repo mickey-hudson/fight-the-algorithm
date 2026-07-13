@@ -262,6 +262,16 @@ button:disabled {
   font-style: italic;
 }
 
+.log-toolbar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+
+.log-toolbar .link-button {
+  font-size: 0.85rem;
+}
+
 .loaf-entries {
   list-style: none;
   margin: 0;
@@ -273,7 +283,7 @@ button:disabled {
 
 .loaf-entry {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.75rem;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -281,42 +291,33 @@ button:disabled {
   padding: 0.6rem 0.9rem;
 }
 
-.loaf-rank {
+.loaf-entry > img {
+  height: 22px;
   flex-shrink: 0;
-  min-width: 1.8rem;
-  text-align: center;
-  font-size: 1.1rem;
-  color: var(--text-muted);
+  margin-top: 0.15rem;
 }
 
-.loaf-song {
-  flex: 1;
+.loaf-entry-body {
   min-width: 0;
   display: flex;
   flex-direction: column;
 }
 
-.loaf-title {
+.loaf-line {
+  font-size: 0.9rem;
+}
+
+.loaf-who {
+  color: var(--accent);
   font-weight: 600;
 }
 
-.loaf-artist {
+.loaf-quote {
+  margin-top: 0.15rem;
   font-size: 0.85rem;
   color: var(--text-muted);
-}
-
-.loaf-count {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-weight: 600;
-  color: var(--accent);
-}
-
-.loaf-count img {
-  height: 20px;
-  display: block;
+  font-style: italic;
+  overflow-wrap: anywhere;
 }
 
 .filters {
@@ -404,6 +405,25 @@ button:disabled {
   flex-shrink: 0;
 }
 
+.comment-composer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.composer-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.composer-actions .primary {
+  margin-top: 0;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
 .card-actions {
   display: flex;
   gap: 1rem;
@@ -411,41 +431,71 @@ button:disabled {
   flex-wrap: wrap;
 }
 
-.meatloaf {
+/* LOAF / First Timer badge toggles in the comment composer. */
+.badge-toggle {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-}
-
-.meatloaf-button {
-  display: inline-flex;
-  align-items: center;
   background: var(--surface-raised);
   border: 1px solid var(--border);
   border-radius: 999px;
-  padding: 0.2rem 0.55rem;
+  padding: 0.25rem 0.75rem 0.25rem 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
 }
 
-.meatloaf-button img {
-  height: 22px;
+.badge-toggle img {
+  height: 20px;
   display: block;
 }
 
-.meatloaf-button:hover {
-  border-color: var(--accent);
+.badge-toggle img.scuba {
+  height: 26px;
 }
 
-.meatloaf-button.active {
+.badge-toggle:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.badge-toggle[aria-pressed='true'] {
   border-color: var(--accent);
   background: rgba(244, 185, 66, 0.18);
+  color: var(--text);
 }
 
-.meatloaf-count {
-  font-size: 0.85rem;
+.loaf-letters {
+  color: var(--error);
+  font-weight: 700;
+  letter-spacing: 0.05em;
 }
 
-.meatloaf-voters {
+/* Badges shown on a posted comment. */
+.loaf-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: 0.5rem;
+  background: rgba(244, 185, 66, 0.12);
+  border: 1px solid rgba(244, 185, 66, 0.45);
+  border-radius: 999px;
+  padding: 0.05rem 0.6rem 0.05rem 0.35rem;
   font-size: 0.8rem;
+  vertical-align: 1px;
+}
+
+.loaf-chip img {
+  height: 16px;
+  display: block;
+}
+
+.loaf-chip img.scuba {
+  height: 24px;
+}
+
+.loaf-chip.first-timer {
+  background: var(--surface-raised);
+  border-color: var(--border);
   color: var(--text-muted);
 }
 

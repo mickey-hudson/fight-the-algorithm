@@ -1,16 +1,13 @@
 import { useState } from 'react'
 import CommentSection from './CommentSection'
 import ConfirmButton from './ConfirmButton'
-import MeatloafButton from './MeatloafButton'
 import SongForm from './SongForm'
 import { aliasOf } from '../users'
 
 export default function SongCard({
   song,
   comments,
-  meatloafs,
   usersById,
-  onToggleMeatloaf,
   currentUserId,
   isAdmin,
   onSetInPlaylists,
@@ -55,12 +52,6 @@ export default function SongCard({
       </p>
 
       <div className="card-actions">
-        <MeatloafButton
-          meatloafs={meatloafs}
-          usersById={usersById}
-          currentUserId={currentUserId}
-          onToggle={() => onToggleMeatloaf(song.id)}
-        />
         <button className="link-button" onClick={() => setShowComments((v) => !v)}>
           {showComments
             ? 'Hide comments'
@@ -97,7 +88,7 @@ export default function SongCard({
           comments={comments}
           usersById={usersById}
           currentUserId={currentUserId}
-          onAdd={(text) => onAddComment(song.id, text)}
+          onAdd={(text, badges) => onAddComment(song.id, text, badges)}
           onEdit={onEditComment}
           onDelete={onDeleteComment}
         />

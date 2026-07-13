@@ -1,4 +1,4 @@
-// Songs/comments/meatloafs reference people by userId; these helpers turn
+// Songs and comments reference people by userId; these helpers turn
 // ids back into display names. Cards and lists show the DJ alias; the full
 // "{first} {last} aka {alias}" form is for the identity picker.
 

@@ -1,12 +1,21 @@
 /**
  * Fight the Algorithm — Google Apps Script backend.
  *
- * Bound to a Google Sheet with five tabs (created by setup()):
+ * Bound to a Google Sheet with four tabs (created by setup()):
  *   Users:     id | firstName | lastName | alias | createdAt
  *   Songs:     id | song | artist | genre | userId | notes | createdAt | inPlaylists
- *   Comments:  id | songId | userId | text | createdAt
- *   Meatloafs: id | songId | userId | createdAt
+ *   Comments:  id | songId | userId | text | createdAt | loaf | firstTimer
  *   Playlists: month | spotifyUrl | appleMusicUrl
+ *
+ * Comments.loaf / Comments.firstTimer are the L.O.A.F. ("Listener Obsessed,
+ * Absolute Fire") and First Timer badges, set when the comment is posted.
+ * Deliberately not scores: never counted, summed, or ranked. The columns sit
+ * after createdAt so sheets from before the badges existed keep working —
+ * old rows read as blank, which the app treats as false.
+ *
+ * A retired Meatloafs tab (id | songId | userId | createdAt) may still exist
+ * from the old per-song vote feature. It is no longer read or written, but is
+ * kept as an archive; migrateToUsers() still knows about it.
  *
  * Songs.inPlaylists tracks whether the playlist curator has copied the song
  * into the Spotify / Apple Music playlists. New songs get 'false'; rows from
@@ -34,8 +43,7 @@ var PLAYLISTS_SHEET = 'Playlists';
 
 var USERS_HEADERS = ['id', 'firstName', 'lastName', 'alias', 'createdAt'];
 var SONGS_HEADERS = ['id', 'song', 'artist', 'genre', 'userId', 'notes', 'createdAt', 'inPlaylists'];
-var COMMENTS_HEADERS = ['id', 'songId', 'userId', 'text', 'createdAt'];
-var MEATLOAFS_HEADERS = ['id', 'songId', 'userId', 'createdAt'];
+var COMMENTS_HEADERS = ['id', 'songId', 'userId', 'text', 'createdAt', 'loaf', 'firstTimer'];
 var PLAYLISTS_HEADERS = ['month', 'spotifyUrl', 'appleMusicUrl'];
 
 var MAX_FIELD_LENGTH = 2000;
@@ -51,7 +59,6 @@ function setup() {
   ensureSheet(ss, USERS_SHEET, USERS_HEADERS);
   ensureSheet(ss, SONGS_SHEET, SONGS_HEADERS);
   ensureSheet(ss, COMMENTS_SHEET, COMMENTS_HEADERS);
-  ensureSheet(ss, MEATLOAFS_SHEET, MEATLOAFS_HEADERS);
   ensureSheet(ss, PLAYLISTS_SHEET, PLAYLISTS_HEADERS);
   // Keep month values as typed (e.g. 2026-07) — otherwise Sheets parses them as dates.
   var playlists = ss.getSheetByName(PLAYLISTS_SHEET);
@@ -72,7 +79,6 @@ function doGet() {
     users: readAll(USERS_SHEET, USERS_HEADERS),
     songs: readAll(SONGS_SHEET, SONGS_HEADERS),
     comments: readAll(COMMENTS_SHEET, COMMENTS_HEADERS),
-    meatloafs: readAll(MEATLOAFS_SHEET, MEATLOAFS_HEADERS),
     playlists: readAll(PLAYLISTS_SHEET, PLAYLISTS_HEADERS),
   });
 }
@@ -105,8 +111,6 @@ function doPost(e) {
         return jsonResponse(editComment(body));
       case 'deleteComment':
         return jsonResponse(deleteComment(body));
-      case 'toggleMeatloaf':
-        return jsonResponse(toggleMeatloaf(body));
       case 'setInPlaylists':
         return jsonResponse(setInPlaylists(body));
       case 'importLegacy':
@@ -216,6 +220,8 @@ function addComment(body) {
     userId: clean(body.userId),
     text: clean(body.text),
     createdAt: new Date().toISOString(),
+    loaf: clean(body.loaf) === 'true' ? 'true' : 'false',
+    firstTimer: clean(body.firstTimer) === 'true' ? 'true' : 'false',
   };
   appendRecord(COMMENTS_SHEET, COMMENTS_HEADERS, record);
   return { comment: record };
@@ -252,41 +258,7 @@ function deleteSong(body) {
 
   found.sheet.deleteRow(found.rowIndex);
   deleteRowsBySongId(COMMENTS_SHEET, body.id);
-  deleteRowsBySongId(MEATLOAFS_SHEET, body.id);
   return { ok: true, deletedId: body.id };
-}
-
-function toggleMeatloaf(body) {
-  var missing = requireFields(body, ['songId', 'userId']);
-  if (missing) return missing;
-  if (!userExists(body.userId)) return { error: 'Unknown user' };
-
-  var songId = clean(body.songId);
-  var userId = clean(body.userId);
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(MEATLOAFS_SHEET);
-  if (!sheet) {
-    // Tab may not exist yet on sheets created before this feature.
-    ensureSheet(ss, MEATLOAFS_SHEET, MEATLOAFS_HEADERS);
-    sheet = ss.getSheetByName(MEATLOAFS_SHEET);
-  }
-
-  var values = sheet.getDataRange().getValues();
-  for (var r = 1; r < values.length; r++) {
-    if (String(values[r][1]) === songId && String(values[r][2]) === userId) {
-      sheet.deleteRow(r + 1);
-      return { removed: true, songId: songId, userId: userId };
-    }
-  }
-
-  var record = {
-    id: Utilities.getUuid(),
-    songId: songId,
-    userId: userId,
-    createdAt: new Date().toISOString(),
-  };
-  appendRecord(MEATLOAFS_SHEET, MEATLOAFS_HEADERS, record);
-  return { meatloaf: record };
 }
 
 function editComment(body) {

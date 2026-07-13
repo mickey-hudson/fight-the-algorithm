@@ -70,11 +70,6 @@ export async function setInPlaylists(fields) {
   return data.song
 }
 
-export async function toggleMeatloaf(fields) {
-  if (isMockMode) return mockToggleMeatloaf(fields)
-  return post({ action: 'toggleMeatloaf', ...fields })
-}
-
 export async function addUser(fields) {
   if (isMockMode) return mockAddUser(fields)
   const data = await post({ action: 'addUser', ...fields })
@@ -89,8 +84,8 @@ export async function editUser(fields) {
 
 // --- Mock backend (used until APPS_SCRIPT_URL is configured) ---
 
-// v2: user name strings were replaced by userId references.
-const MOCK_KEY = 'fta-mock-data-v2'
+// v3: meatloafs became loaf/firstTimer badge flags on comments.
+const MOCK_KEY = 'fta-mock-data-v3'
 
 const MOCK_SEED = {
   users: [
@@ -151,20 +146,17 @@ const MOCK_SEED = {
       songId: 'seed-2',
       userId: 'seed-u1',
       text: 'Saw this live in 2019, unreal.',
-      createdAt: '2026-07-04T12:00:00.000Z',
-    },
-  ],
-  meatloafs: [
-    {
-      id: 'seed-m1',
-      songId: 'seed-2',
-      userId: 'seed-u1',
+      loaf: true,
+      firstTimer: false,
       createdAt: '2026-07-04T12:00:00.000Z',
     },
     {
-      id: 'seed-m2',
-      songId: 'seed-2',
+      id: 'seed-c2',
+      songId: 'seed-1',
       userId: 'seed-u3',
+      text: 'Never heard this before and now it lives in my head rent-free.',
+      loaf: true,
+      firstTimer: true,
       createdAt: '2026-07-05T12:00:00.000Z',
     },
   ],
@@ -192,7 +184,6 @@ function mockLoad() {
         users: [],
         songs: [],
         comments: [],
-        meatloafs: [],
         playlists: [],
         ...JSON.parse(stored),
       }
@@ -230,30 +221,6 @@ async function mockEdit(collection, { id, requester, ...fields }) {
   return record
 }
 
-async function mockToggleMeatloaf({ songId, userId }) {
-  await new Promise((r) => setTimeout(r, 400))
-  const data = mockLoad()
-  const existing = data.meatloafs.find(
-    (m) => m.songId === songId && m.userId === userId
-  )
-  let result
-  if (existing) {
-    data.meatloafs = data.meatloafs.filter((m) => m !== existing)
-    result = { removed: true, songId, userId }
-  } else {
-    const record = {
-      id: crypto.randomUUID(),
-      songId,
-      userId,
-      createdAt: new Date().toISOString(),
-    }
-    data.meatloafs.push(record)
-    result = { meatloaf: record }
-  }
-  localStorage.setItem(MOCK_KEY, JSON.stringify(data))
-  return result
-}
-
 function mockAliasTaken(data, alias, excludeId) {
   const wanted = alias.trim().toLowerCase()
   return data.users.some(
@@ -285,7 +252,6 @@ async function mockDelete(collection, { id }) {
   data[collection] = data[collection].filter((r) => r.id !== id)
   if (collection === 'songs') {
     data.comments = data.comments.filter((c) => c.songId !== id)
-    data.meatloafs = data.meatloafs.filter((m) => m.songId !== id)
   }
   localStorage.setItem(MOCK_KEY, JSON.stringify(data))
   return { ok: true, deletedId: id }

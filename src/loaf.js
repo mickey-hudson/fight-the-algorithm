@@ -1,33 +1,25 @@
-// LOAF (Listener Obsession, Absolute Fire): songs that have been meatloaf-ed.
-// Rankings are derived entirely from data the app already has — no backend involved.
+// LOAF (Listener Obsessed, Absolute Fire): a badge people attach to a comment.
+// Deliberately not a score — no counts, no sums, no rankings anywhere. The Loaf
+// Log is just the feed of those moments, derived entirely from data the app
+// already has — no backend involved.
 
 import { monthKey } from './months'
 
-export const ALL_TIME_CAP = 10
-
-// Ranks songs by meatloaf count (desc), ties broken by whose latest meatloaf is
-// newest. Songs with zero meatloafs never make the list.
-function rank(songs, meatloafs) {
-  const stats = new Map()
-  for (const m of meatloafs) {
-    const s = stats.get(m.songId) || { count: 0, latestLoafAt: 0 }
-    s.count += 1
-    s.latestLoafAt = Math.max(s.latestLoafAt, new Date(m.createdAt).getTime() || 0)
-    stats.set(m.songId, s)
-  }
-  return songs
-    .filter((song) => stats.has(song.id))
-    .map((song) => ({ song, ...stats.get(song.id) }))
-    .sort((a, b) => b.count - a.count || b.latestLoafAt - a.latestLoafAt)
+// Badge flags arrive as booleans from the mock backend and as 'true'/'false'
+// strings from the Sheets backend.
+export function isFlagged(value) {
+  return value === true || String(value).toLowerCase() === 'true'
 }
 
-export function monthlyLoafList(songs, meatloafs, month) {
-  return rank(
-    songs.filter((s) => monthKey(s.createdAt) === month),
-    meatloafs
+// Loaf moments for the given month ('all' = every month), newest first.
+export function loafLog(songs, comments, month) {
+  const songsById = new Map(
+    songs
+      .filter((s) => month === 'all' || monthKey(s.createdAt) === month)
+      .map((s) => [s.id, s])
   )
-}
-
-export function allTimeLoafList(songs, meatloafs) {
-  return rank(songs, meatloafs).slice(0, ALL_TIME_CAP)
+  return comments
+    .filter((c) => isFlagged(c.loaf) && songsById.has(c.songId))
+    .map((c) => ({ comment: c, song: songsById.get(c.songId) }))
+    .sort((a, b) => new Date(b.comment.createdAt) - new Date(a.comment.createdAt))
 }

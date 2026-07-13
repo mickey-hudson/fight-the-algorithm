@@ -12,7 +12,7 @@ shares song recommendations and comments on each other's picks.
 
 - **DJ profiles** — first visit shows a type-ahead picker of existing users
   ("{first} {last} aka {alias}"); newcomers register with first name, optional last
-  name, and a DJ alias (duplicates rejected). Songs, comments, and meatloafs reference
+  name, and a DJ alias (duplicates rejected). Songs and comments reference
   users by id, so editing your name or alias (via "edit profile" in the header) never
   orphans your stuff. Everything displays the DJ alias.
 - **Song suggestions** — anyone can suggest a song (title, artist, genre, notes);
@@ -20,12 +20,15 @@ shares song recommendations and comments on each other's picks.
 - **Comments** — comment on each other's picks; same creator-only edit/delete rule.
 - **Monthly crates** — a pill strip filters suggestions by month, plus an "All" view;
   genre and recommender filters within a month.
-- **Meatloafs** — like a song by giving it a meatloaf (one per person per song,
-  toggle to take it back). The count and who gave them show on each card.
-- **LOAF lists** — LOAF (Listener Obsession, Absolute Fire): a view toggle switches
-  from suggestions to a leaderboard of meatloaf-ed songs. Each month gets an uncapped
-  ranked list; the "All" pill shows the all-time Top 10, ties broken by most recent
-  meatloaf. Derived on the client from data already fetched — no backend involvement.
+- **Comment badges** — while writing a comment you can tag it **L.O.A.F.**
+  ("Listener Obsessed, Absolute Fire" — the meatloaf icon with red letters) and/or
+  **First Timer** (Scuba Steve — the song was new to you). Deliberately not scores:
+  badges only exist inside comments, there are no counts, sums, or rankings anywhere,
+  and there is no way to "like" a song without saying something about it.
+- **The Loaf Log** — a view toggle switches from suggestions to a feed of loaf
+  moments ("Sam meatloafed Pink Pony Club — a first listen, no less" plus the
+  comment). Newest first with a shuffle button, because order means nothing. Derived
+  on the client from data already fetched — no backend involvement.
 - **Playlist links** — a links row under the month pills points to that month's
   Spotify / Apple Music playlist ("All" shows the master playlist). Links live in the
   hand-maintained **Playlists** sheet tab; months without a row simply show no links.
@@ -53,17 +56,20 @@ With no backend configured (`APPS_SCRIPT_URL` empty in `src/config.js`), the app
 
 ## How data is stored
 
-Five tabs in the Google Sheet, which doubles as an admin UI (edit/delete rows directly):
+Four tabs in the Google Sheet, which doubles as an admin UI (edit/delete rows directly):
 
 | Tab       | Columns                                                     |
 | --------- | ----------------------------------------------------------- |
 | Users     | id, firstName, lastName, alias, createdAt                   |
 | Songs     | id, song, artist, genre, userId, notes, createdAt           |
-| Comments  | id, songId, userId, text, createdAt                         |
-| Meatloafs | id, songId, userId, createdAt                               |
+| Comments  | id, songId, userId, text, createdAt, loaf, firstTimer       |
 | Playlists | month, spotifyUrl, appleMusicUrl                            |
 
-The first four tabs are written by the app. **Playlists** is maintained by hand
+A **Meatloafs** tab (id, songId, userId, createdAt) may remain from the retired
+per-song vote feature; the app no longer reads or writes it, but the rows are kept
+as an archive.
+
+The first three tabs are written by the app. **Playlists** is maintained by hand
 (whoever curates the playlists): one row per monthly playlist with `month` as
 `YYYY-MM` (e.g. `2026-07`), plus one row with `month` = `all` for the master
 playlist of every song. Leave a URL cell blank if that platform has no playlist.

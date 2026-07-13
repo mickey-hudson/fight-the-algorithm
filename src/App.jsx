@@ -7,7 +7,6 @@ import {
   deleteSong,
   editComment,
   deleteComment,
-  toggleMeatloaf,
   setInPlaylists,
   addUser,
   editUser,
@@ -29,7 +28,6 @@ export default function App() {
   const [users, setUsers] = useState([])
   const [songs, setSongs] = useState([])
   const [comments, setComments] = useState([])
-  const [meatloafs, setMeatloafs] = useState([])
   const [playlists, setPlaylists] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -42,7 +40,6 @@ export default function App() {
         setUsers(data.users || [])
         setSongs(data.songs)
         setComments(data.comments)
-        setMeatloafs(data.meatloafs || [])
         setPlaylists(data.playlists || [])
       })
       .catch((err) => setError(err.message))
@@ -79,8 +76,8 @@ export default function App() {
     setMonth(monthKey(song.createdAt))
   }
 
-  async function handleAddComment(songId, text) {
-    const comment = await addComment({ songId, userId, text })
+  async function handleAddComment(songId, text, { loaf, firstTimer }) {
+    const comment = await addComment({ songId, userId, text, loaf, firstTimer })
     setComments((prev) => [...prev, comment])
   }
 
@@ -93,18 +90,6 @@ export default function App() {
     await deleteSong({ id, requester: userId })
     setSongs((prev) => prev.filter((s) => s.id !== id))
     setComments((prev) => prev.filter((c) => c.songId !== id))
-    setMeatloafs((prev) => prev.filter((m) => m.songId !== id))
-  }
-
-  async function handleToggleMeatloaf(songId) {
-    const result = await toggleMeatloaf({ songId, userId })
-    if (result.removed) {
-      setMeatloafs((prev) =>
-        prev.filter((m) => !(m.songId === songId && m.userId === userId))
-      )
-    } else {
-      setMeatloafs((prev) => [...prev, result.meatloaf])
-    }
   }
 
   async function handleSetInPlaylists(songId, value) {
@@ -188,10 +173,8 @@ export default function App() {
         <SongList
           songs={songs}
           comments={comments}
-          meatloafs={meatloafs}
           playlists={playlists}
           usersById={usersById}
-          onToggleMeatloaf={handleToggleMeatloaf}
           month={month}
           onSelectMonth={setMonth}
           currentUserId={userId}
