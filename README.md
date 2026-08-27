@@ -51,8 +51,11 @@ With no backend configured (`APPS_SCRIPT_URL` empty in `src/config.js`), the app
    **GitHub Actions**. Every push to `main` then builds and deploys via
    [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml).
 
-> The Vite `base` in `vite.config.js` is `/fight-the-algorithm/`. If you rename the repo,
-> update it to match.
+> The site is served from the custom domain **ftaplaylist.com**, set as the Pages custom
+> domain in repo settings and kept across deploys by [`public/CNAME`](public/CNAME) (Vite
+> copies `public/` into `dist/`, which is what the workflow uploads). Because the apex
+> domain serves the site from the root, the Vite `base` in `vite.config.js` is `/`. Drop
+> the custom domain and it would need to go back to `/fight-the-algorithm/`.
 
 ## How data is stored
 
