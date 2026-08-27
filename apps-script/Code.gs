@@ -32,6 +32,10 @@
  * playlist (month = YYYY-MM, e.g. 2026-07) plus one row with month = all for
  * the master playlist. Leave a URL cell blank if that platform has no playlist.
  *
+ * The columns holding typed text are formatted as plain text by setup() — see
+ * TEXT_COLUMNS. Without that, Sheets parses on write and a song called "7/11"
+ * is stored as a date, which the app then reads back as an ISO timestamp.
+ *
  * Deployed as a web app (Execute as: Me, Access: Anyone). See README.md.
  */
 
@@ -48,6 +52,16 @@ var PLAYLISTS_HEADERS = ['month', 'spotifyUrl', 'appleMusicUrl'];
 
 var MAX_FIELD_LENGTH = 2000;
 
+// Columns holding text people typed. Sheets parses anything parseable on write,
+// so without an explicit plain-text format a song called "7/11" is stored as a
+// date and read back as 2026-07-11T04:00:00.000Z. setup() formats these columns
+// as text; re-run it after adding a tab or column.
+var TEXT_COLUMNS = {};
+TEXT_COLUMNS[USERS_SHEET] = ['firstName', 'lastName', 'alias'];
+TEXT_COLUMNS[SONGS_SHEET] = ['song', 'artist', 'genre', 'notes'];
+TEXT_COLUMNS[COMMENTS_SHEET] = ['text'];
+TEXT_COLUMNS[PLAYLISTS_SHEET] = ['month'];
+
 // Chuck — curates the Spotify / Apple Music playlists. Identity is honor
 // system like everywhere else; this just keeps the toggle off everyone
 // else's cards.
@@ -60,9 +74,6 @@ function setup() {
   ensureSheet(ss, SONGS_SHEET, SONGS_HEADERS);
   ensureSheet(ss, COMMENTS_SHEET, COMMENTS_HEADERS);
   ensureSheet(ss, PLAYLISTS_SHEET, PLAYLISTS_HEADERS);
-  // Keep month values as typed (e.g. 2026-07) — otherwise Sheets parses them as dates.
-  var playlists = ss.getSheetByName(PLAYLISTS_SHEET);
-  playlists.getRange('A:A').setNumberFormat('@');
 }
 
 function ensureSheet(ss, name, headers) {
@@ -72,6 +83,13 @@ function ensureSheet(ss, name, headers) {
   }
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]).setFontWeight('bold');
   sheet.setFrozenRows(1);
+
+  var textColumns = TEXT_COLUMNS[name] || [];
+  for (var i = 0; i < textColumns.length; i++) {
+    var col = headers.indexOf(textColumns[i]) + 1;
+    // Row 2 down, so the bold header keeps its own formatting.
+    if (col > 0) sheet.getRange(2, col, sheet.getMaxRows() - 1, 1).setNumberFormat('@');
+  }
 }
 
 function doGet() {

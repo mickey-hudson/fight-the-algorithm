@@ -83,6 +83,20 @@ columns existed stay blank, which the app treats as false.
 This replaced the per-song meatloaf votes. An old **Meatloafs** tab is no longer
 read or written — keep it as an archive or delete it, either is fine.
 
+## Keeping text columns from turning into dates
+
+Sheets parses anything parseable when a value is written, so a song titled
+`7/11` lands in the sheet as a date and the app reads it back as
+`2026-07-11T04:00:00.000Z`. `setup()` formats the columns holding typed text —
+Users `firstName`/`lastName`/`alias`, Songs `song`/`artist`/`genre`/`notes`,
+Comments `text`, and Playlists `month` — as plain text so the value is stored
+exactly as written.
+
+Adding this to an existing sheet: update the script and re-run `setup()`. It
+only affects values written afterwards; anything already coerced has to be
+fixed by hand (format the cell as **Format → Number → Plain text**, then retype
+the value).
+
 ## Maintaining playlist links
 
 The **Playlists** tab is edited by hand, not through the app. When a new monthly
