@@ -28,9 +28,11 @@
  * before Users existed hold plain names in those columns — run
  * migrateToUsers() once from the editor to convert them (see README.md).
  *
- * Playlists is maintained by hand, not through the app: one row per monthly
- * playlist (month = YYYY-MM, e.g. 2026-07) plus one row with month = all for
- * the master playlist. Leave a URL cell blank if that platform has no playlist.
+ * Playlists: one row per monthly playlist (month = YYYY-MM, e.g. 2026-07)
+ * plus one row with month = all for the master playlist. Leave a URL cell
+ * blank if that platform has no playlist. The curator (ADMIN_USER_ID) sets
+ * these from the app via the setPlaylistLinks action; editing the sheet
+ * directly still works too.
  *
  * The columns holding typed text are formatted as plain text by setup() — see
  * TEXT_COLUMNS. Without that, Sheets parses on write and a song called "7/11"
@@ -62,10 +64,13 @@ TEXT_COLUMNS[SONGS_SHEET] = ['song', 'artist', 'genre', 'notes'];
 TEXT_COLUMNS[COMMENTS_SHEET] = ['text'];
 TEXT_COLUMNS[PLAYLISTS_SHEET] = ['month'];
 
-// Chuck — curates the Spotify / Apple Music playlists. Identity is honor
-// system like everywhere else; this just keeps the toggle off everyone
-// else's cards.
+// Chuck — curates the Spotify / Apple Music playlists and sets the monthly
+// playlist links. Identity is honor system like everywhere else; this just
+// keeps the toggle/form off everyone else's cards.
 var ADMIN_USER_ID = '70327eee-132f-4381-8aac-aaec1effa461';
+
+// Playlists.month is YYYY-MM, or the literal "all" for the master playlist.
+var MONTH_PATTERN = /^\d{4}-\d{2}$/;
 
 /** Run this once from the editor to create the tabs with headers. */
 function setup() {
@@ -131,6 +136,8 @@ function doPost(e) {
         return jsonResponse(deleteComment(body));
       case 'setInPlaylists':
         return jsonResponse(setInPlaylists(body));
+      case 'setPlaylistLinks':
+        return jsonResponse(setPlaylistLinks(body));
       case 'importLegacy':
         return jsonResponse(importLegacy(body));
       default:
@@ -225,6 +232,57 @@ function setInPlaylists(body) {
   record.inPlaylists = clean(body.inPlaylists) === 'true' ? 'true' : 'false';
   writeRecord(found, SONGS_HEADERS, record);
   return { song: record };
+}
+
+function setPlaylistLinks(body) {
+  var missing = requireFields(body, ['month', 'requester']);
+  if (missing) return missing;
+  if (clean(body.requester) !== ADMIN_USER_ID) {
+    return { error: 'Only the playlist curator can do that' };
+  }
+
+  var month = clean(body.month);
+  if (month !== 'all' && !MONTH_PATTERN.test(month)) {
+    return { error: 'Month must be "all" or in YYYY-MM format' };
+  }
+
+  var record = {
+    month: month,
+    spotifyUrl: clean(body.spotifyUrl),
+    appleMusicUrl: clean(body.appleMusicUrl),
+  };
+
+  var found = findPlaylistRow(month);
+  if (found) {
+    writeRecord(found, PLAYLISTS_HEADERS, record);
+  } else {
+    appendRecord(PLAYLISTS_SHEET, PLAYLISTS_HEADERS, record);
+  }
+  return { playlist: record };
+}
+
+// Matches by month like findRowById, but tolerates a month cell Sheets parsed
+// into a real Date before the column was formatted as plain text — otherwise
+// editing such a row from the app would append a duplicate instead of fixing it.
+function findPlaylistRow(month) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(PLAYLISTS_SHEET);
+  if (!sheet) return null;
+  var values = sheet.getDataRange().getValues();
+  for (var r = 1; r < values.length; r++) {
+    if (normalizeMonthCell(values[r][0]) === month) {
+      return { sheet: sheet, rowIndex: r + 1, record: rowToRecord(values[r], PLAYLISTS_HEADERS) };
+    }
+  }
+  return null;
+}
+
+function normalizeMonthCell(value) {
+  if (value instanceof Date) {
+    var m = String(value.getMonth() + 1);
+    if (m.length < 2) m = '0' + m;
+    return value.getFullYear() + '-' + m;
+  }
+  return String(value || '').trim();
 }
 
 function addComment(body) {

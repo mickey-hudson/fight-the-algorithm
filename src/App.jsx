@@ -8,6 +8,7 @@ import {
   editComment,
   deleteComment,
   setInPlaylists,
+  setPlaylistLinks,
   addUser,
   editUser,
   isMockMode,
@@ -18,7 +19,7 @@ import ProfileForm from './components/ProfileForm'
 import SongForm from './components/SongForm'
 import SongList from './components/SongList'
 import { byId } from './users'
-import { currentMonthKey, monthKey } from './months'
+import { currentMonthKey, monthKey, normalizeMonth } from './months'
 
 const USER_KEY = 'fta-user-id'
 
@@ -101,6 +102,17 @@ export default function App() {
     setSongs((prev) => prev.map((s) => (s.id === songId ? updated : s)))
   }
 
+  async function handleSetPlaylistLinks(month, fields) {
+    const updated = await setPlaylistLinks({ month, requester: userId, ...fields })
+    setPlaylists((prev) => {
+      const idx = prev.findIndex((p) => normalizeMonth(p.month) === normalizeMonth(updated.month))
+      if (idx === -1) return [...prev, updated]
+      const next = [...prev]
+      next[idx] = updated
+      return next
+    })
+  }
+
   async function handleEditComment(id, text) {
     const updated = await editComment({ id, requester: userId, text })
     setComments((prev) => prev.map((c) => (c.id === id ? updated : c)))
@@ -180,6 +192,7 @@ export default function App() {
           currentUserId={userId}
           isAdmin={isAdmin}
           onSetInPlaylists={handleSetInPlaylists}
+          onSetPlaylistLinks={handleSetPlaylistLinks}
           onAddComment={handleAddComment}
           onEditSong={handleEditSong}
           onDeleteSong={handleDeleteSong}

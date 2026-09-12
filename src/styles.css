@@ -218,6 +218,24 @@ button:disabled {
   color: var(--accent);
 }
 
+.playlist-admin-toggle {
+  display: block;
+  margin: -0.5rem 0 0.75rem;
+  font-size: 0.85rem;
+}
+
+.playlist-admin-form {
+  margin: 0 0 1rem;
+}
+
+.playlist-admin-form label {
+  margin-top: 0.5rem;
+}
+
+.playlist-admin-form label:first-child {
+  margin-top: 0;
+}
+
 .view-toggle {
   display: flex;
   gap: 0.35rem;

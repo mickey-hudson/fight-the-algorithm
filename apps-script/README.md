@@ -99,8 +99,12 @@ the value).
 
 ## Maintaining playlist links
 
-The **Playlists** tab is edited by hand, not through the app. When a new monthly
-playlist is created on Spotify / Apple Music, add a row:
+The curator (the user id in `ADMIN_USER_ID`, mirrored in `src/config.js`) can set
+the Spotify / Apple Music links for the selected month right from the app — a
+"Set/Edit … playlist links" control appears under the month's playlist links for
+that user only, backed by the `setPlaylistLinks` action.
+
+The **Playlists** tab still works too, if you'd rather edit it by hand:
 
 | month   | spotifyUrl                       | appleMusicUrl                   |
 | ------- | -------------------------------- | ------------------------------- |
@@ -109,7 +113,7 @@ playlist is created on Spotify / Apple Music, add a row:
 
 - `month` is `YYYY-MM`; the single `all` row is the master playlist of every song.
 - Leave a URL cell blank if that platform doesn't have the playlist.
-- The app picks up changes on next load — no redeploy needed.
+- The app picks up changes on next load — no redeploy needed either way.
 
 ## Notes
 

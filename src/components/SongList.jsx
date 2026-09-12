@@ -3,6 +3,7 @@ import SongCard from './SongCard'
 import MonthPills from './MonthPills'
 import LoafLog from './LoafLog'
 import PlaylistLinks from './PlaylistLinks'
+import PlaylistLinksAdmin from './PlaylistLinksAdmin'
 import { monthKey, monthLabel, currentMonthKey } from '../months'
 import { aliasOf } from '../users'
 
@@ -16,6 +17,7 @@ export default function SongList({
   currentUserId,
   isAdmin,
   onSetInPlaylists,
+  onSetPlaylistLinks,
   onAddComment,
   onEditSong,
   onDeleteSong,
@@ -78,6 +80,9 @@ export default function SongList({
       />
 
       <PlaylistLinks playlists={playlists} month={month} />
+      {isAdmin && (
+        <PlaylistLinksAdmin playlists={playlists} month={month} onSave={onSetPlaylistLinks} />
+      )}
 
       <div className="view-toggle" role="tablist" aria-label="View">
         <button

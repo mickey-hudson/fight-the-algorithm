@@ -1,16 +1,8 @@
-import { monthKey, monthLabel } from '../months'
+import { monthLabel, normalizeMonth } from '../months'
 
-// Playlists come from the hand-maintained Playlists sheet tab: one row per
-// month (YYYY-MM) plus an "all" row for the master playlist of every song.
-
-// Sheets sometimes turns a typed "2026-07" into a real date, which the backend
-// serializes as an ISO string — normalize either form to a month key.
-function normalizeMonth(value) {
-  const v = String(value || '').trim()
-  if (v.toLowerCase() === 'all') return 'all'
-  if (/^\d{4}-\d{2}$/.test(v)) return v
-  return monthKey(v)
-}
+// Playlists come from the Playlists sheet tab: one row per month (YYYY-MM)
+// plus an "all" row for the master playlist of every song. The curator can
+// set these from the app (see PlaylistLinksAdmin) or edit the sheet directly.
 
 function safeUrl(value) {
   const v = String(value || '').trim()

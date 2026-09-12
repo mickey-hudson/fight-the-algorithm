@@ -1,4 +1,5 @@
 import { APPS_SCRIPT_URL } from './config'
+import { normalizeMonth } from './months'
 
 // POST bodies are sent as plain text (fetch's default for string bodies) rather than
 // application/json: Apps Script can't answer CORS preflight OPTIONS requests, and
@@ -68,6 +69,12 @@ export async function setInPlaylists(fields) {
   if (isMockMode) return mockEdit('songs', fields)
   const data = await post({ action: 'setInPlaylists', ...fields })
   return data.song
+}
+
+export async function setPlaylistLinks(fields) {
+  if (isMockMode) return mockSetPlaylistLinks(fields)
+  const data = await post({ action: 'setPlaylistLinks', ...fields })
+  return data.playlist
 }
 
 export async function addUser(fields) {
@@ -244,6 +251,17 @@ async function mockEditUser({ id, ...fields }) {
     throw new Error('That DJ alias is already taken')
   }
   return mockEdit('users', { id, ...fields })
+}
+
+async function mockSetPlaylistLinks({ month, requester, spotifyUrl, appleMusicUrl }) {
+  await new Promise((r) => setTimeout(r, 400))
+  const data = mockLoad()
+  const record = { month, spotifyUrl: spotifyUrl || '', appleMusicUrl: appleMusicUrl || '' }
+  const idx = data.playlists.findIndex((p) => normalizeMonth(p.month) === month)
+  if (idx === -1) data.playlists.push(record)
+  else data.playlists[idx] = record
+  localStorage.setItem(MOCK_KEY, JSON.stringify(data))
+  return record
 }
 
 async function mockDelete(collection, { id }) {

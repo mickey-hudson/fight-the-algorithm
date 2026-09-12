@@ -17,3 +17,12 @@ export function monthLabel(key) {
 export function currentMonthKey() {
   return monthKey(new Date())
 }
+
+// Sheets sometimes turns a typed "2026-07" into a real date, which the backend
+// serializes as an ISO string — normalize either form to a month key.
+export function normalizeMonth(value) {
+  const v = String(value || '').trim()
+  if (v.toLowerCase() === 'all') return 'all'
+  if (/^\d{4}-\d{2}$/.test(v)) return v
+  return monthKey(v)
+}
