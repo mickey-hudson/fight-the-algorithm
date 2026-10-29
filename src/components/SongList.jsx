@@ -27,6 +27,7 @@ export default function SongList({
   const [genre, setGenre] = useState('')
   const [recommenderId, setRecommenderId] = useState('')
   const [view, setView] = useState('songs') // 'songs' | 'loaf' — sticky across month switches
+  const [newestFirst, setNewestFirst] = useState(true)
 
   // Genre/recommender choices are scoped to a month's songs, so they reset on switch.
   function handleSelectMonth(key) {
@@ -64,7 +65,7 @@ export default function SongList({
     .filter((s) => !genre || s.genre === genre)
     .filter((s) => !recommenderId || s.userId === recommenderId)
     .slice()
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .sort((a, b) => (new Date(b.createdAt) - new Date(a.createdAt)) * (newestFirst ? 1 : -1))
 
   if (songs.length === 0) {
     return <p className="status">No suggestions yet — be the first!</p>
@@ -128,6 +129,16 @@ export default function SongList({
                 <option key={r.id} value={r.id}>{r.alias}</option>
               ))}
             </select>
+            <button
+              type="button"
+              className="sort-toggle"
+              onClick={() => setNewestFirst((v) => !v)}
+              title={newestFirst ? 'Newest first' : 'Oldest first'}
+              aria-label={newestFirst ? 'Sorted newest first; switch to oldest first' : 'Sorted oldest first; switch to newest first'}
+            >
+              <span className={newestFirst ? 'sort-arrow active' : 'sort-arrow'} aria-hidden="true">↓</span>
+              <span className={newestFirst ? 'sort-arrow' : 'sort-arrow active'} aria-hidden="true">↑</span>
+            </button>
           </div>
 
           {inMonth.length === 0 && (

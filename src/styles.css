@@ -350,6 +350,21 @@ button:disabled {
   min-width: 0;
 }
 
+.sort-toggle {
+  flex: 0 0 auto;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.sort-arrow.active {
+  color: var(--accent);
+  font-weight: 700;
+}
+
 .song-list {
   list-style: none;
   margin: 0;
