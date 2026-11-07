@@ -1,4 +1,8 @@
 import { currentMonthKey, isHolidaySeason, monthKey, monthLabel } from './months'
+import meatloafIcon from './assets/meatloaf.png'
+import scubaIcon from './assets/scuba-steve.png'
+import meatloafSantaIcon from './assets/meatloaf-santa.png'
+import scubaSantaIcon from './assets/scuba-steve-santa.png'
 
 // The two pages of the app. Everything that differs between the normal monthly
 // suggestions and the holiday edition lives here, so components read
@@ -24,6 +28,8 @@ export const EDITIONS = {
     canSubmit: () => true,
     suggestLabel: '+ Suggest a song',
     genrePlaceholder: 'Pop, Jazz, Hyperpop…',
+    // Images for the L.O.A.F. and First Timer comment badges.
+    badgeIcons: { loaf: meatloafIcon, firstTimer: scubaIcon },
   },
   holiday: {
     id: 'holiday',
@@ -44,5 +50,6 @@ export const EDITIONS = {
     canSubmit: () => isHolidaySeason(),
     suggestLabel: '+ Suggest a holiday song',
     genrePlaceholder: 'Classic, Jazz, Mariah…',
+    badgeIcons: { loaf: meatloafSantaIcon, firstTimer: scubaSantaIcon },
   },
 }

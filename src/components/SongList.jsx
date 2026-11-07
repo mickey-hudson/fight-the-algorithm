@@ -186,6 +186,7 @@ export default function SongList({
                 onDeleteSong={onDeleteSong}
                 onEditComment={onEditComment}
                 onDeleteComment={onDeleteComment}
+                badgeIcons={edition.badgeIcons}
               />
             ))}
           </ul>
