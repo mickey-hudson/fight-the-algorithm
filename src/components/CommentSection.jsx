@@ -1,7 +1,5 @@
 import { useState } from 'react'
 import ConfirmButton from './ConfirmButton'
-import meatloafIcon from '../assets/meatloaf.png'
-import scubaIcon from '../assets/scuba-steve.png'
 import { isFlagged } from '../loaf'
 import { aliasOf } from '../users'
 
@@ -15,6 +13,7 @@ export default function CommentSection({
   onAdd,
   onEdit,
   onDelete,
+  badgeIcons,
 }) {
   const [text, setText] = useState('')
   const [loaf, setLoaf] = useState(false)
@@ -54,6 +53,7 @@ export default function CommentSection({
           isOwner={c.userId === currentUserId}
           onEdit={onEdit}
           onDelete={onDelete}
+          badgeIcons={badgeIcons}
         />
       ))}
       <form onSubmit={handleSubmit} className="comment-composer">
@@ -72,7 +72,7 @@ export default function CommentSection({
             title={LOAF_TIP}
             onClick={() => setLoaf((v) => !v)}
           >
-            <img src={meatloafIcon} alt="" />
+            <img src={badgeIcons.loaf} alt="" />
             <span className="loaf-letters">L.O.A.F.</span>
           </button>
           <button
@@ -82,7 +82,7 @@ export default function CommentSection({
             title={FIRST_TIMER_TIP}
             onClick={() => setFirstTimer((v) => !v)}
           >
-            <img className="scuba" src={scubaIcon} alt="" />
+            <img className="scuba" src={badgeIcons.firstTimer} alt="" />
             First Timer
           </button>
           <button className="primary" type="submit" disabled={!text.trim() || submitting}>
@@ -95,18 +95,18 @@ export default function CommentSection({
   )
 }
 
-function CommentBadges({ comment }) {
+function CommentBadges({ comment, badgeIcons }) {
   return (
     <>
       {isFlagged(comment.loaf) && (
         <span className="loaf-chip" title={LOAF_TIP}>
-          <img src={meatloafIcon} alt="Meatloaf" />
+          <img src={badgeIcons.loaf} alt="Meatloaf" />
           <span className="loaf-letters">L.O.A.F.</span>
         </span>
       )}
       {isFlagged(comment.firstTimer) && (
         <span className="loaf-chip first-timer" title={FIRST_TIMER_TIP}>
-          <img className="scuba" src={scubaIcon} alt="Scuba Steve" />
+          <img className="scuba" src={badgeIcons.firstTimer} alt="Scuba Steve" />
           first timer
         </span>
       )}
@@ -114,7 +114,7 @@ function CommentBadges({ comment }) {
   )
 }
 
-function Comment({ comment, alias, isOwner, onEdit, onDelete }) {
+function Comment({ comment, alias, isOwner, onEdit, onDelete, badgeIcons }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(comment.text)
   const [saving, setSaving] = useState(false)
@@ -167,7 +167,7 @@ function Comment({ comment, alias, isOwner, onEdit, onDelete }) {
   return (
     <p className="comment">
       <strong>{alias}</strong> {comment.text}
-      <CommentBadges comment={comment} />
+      <CommentBadges comment={comment} badgeIcons={badgeIcons} />
       {isOwner && (
         <span className="comment-actions">
           <button className="link-button" onClick={() => setEditing(true)}>

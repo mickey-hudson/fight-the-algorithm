@@ -16,6 +16,7 @@ export default function SongCard({
   onDeleteSong,
   onEditComment,
   onDeleteComment,
+  badgeIcons,
 }) {
   const [showComments, setShowComments] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -91,6 +92,7 @@ export default function SongCard({
           onAdd={(text, badges) => onAddComment(song.id, text, badges)}
           onEdit={onEditComment}
           onDelete={onDeleteComment}
+          badgeIcons={badgeIcons}
         />
       )}
     </li>
