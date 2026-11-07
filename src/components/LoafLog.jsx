@@ -2,13 +2,20 @@ import { useMemo, useState } from 'react'
 import meatloafIcon from '../assets/meatloaf.png'
 import { LOAF_TIP } from './CommentSection'
 import { isFlagged, loafLog } from '../loaf'
-import { monthLabel } from '../months'
+import { monthKey, monthLabel } from '../months'
 import { aliasOf } from '../users'
 
-export default function LoafLog({ songs, comments, usersById, month }) {
+export default function LoafLog({
+  songs,
+  comments,
+  usersById,
+  month,
+  crateKey = monthKey,
+  crateLabel = monthLabel,
+}) {
   const newestFirst = useMemo(
-    () => loafLog(songs, comments, month),
-    [songs, comments, month]
+    () => loafLog(songs, comments, month, crateKey),
+    [songs, comments, month, crateKey]
   )
   const [shuffles, setShuffles] = useState(0)
   const entries = useMemo(
@@ -29,7 +36,7 @@ export default function LoafLog({ songs, comments, usersById, month }) {
         <p className="status">
           {month === 'all'
             ? 'No songs have been meatloaf-ed yet.'
-            : `Nothing meatloaf-ed in ${monthLabel(month)} yet — go say something nice!`}
+            : `Nothing meatloaf-ed in ${crateLabel(month)} yet — go say something nice!`}
         </p>
       )}
 

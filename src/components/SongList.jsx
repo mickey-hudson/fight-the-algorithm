@@ -4,10 +4,10 @@ import MonthPills from './MonthPills'
 import LoafLog from './LoafLog'
 import PlaylistLinks from './PlaylistLinks'
 import PlaylistLinksAdmin from './PlaylistLinksAdmin'
-import { monthKey, monthLabel, currentMonthKey } from '../months'
 import { aliasOf } from '../users'
 
 export default function SongList({
+  edition,
   songs,
   comments,
   playlists,
@@ -36,22 +36,30 @@ export default function SongList({
     onSelectMonth(key)
   }
 
+  const { crateKey, crateLabel } = edition
+
+  // Crates are months on the main page and years on the holiday page.
   const months = useMemo(() => {
-    const counts = new Map([[currentMonthKey(), 0]])
+    const seed = edition.seedCrate()
+    const counts = new Map(seed ? [[seed, 0]] : [])
     for (const s of songs) {
-      const key = monthKey(s.createdAt)
+      const key = crateKey(s.createdAt)
       if (key) counts.set(key, (counts.get(key) || 0) + 1)
     }
     return [...counts.keys()]
       .sort()
       .reverse()
-      .map((key) => ({ key, label: monthLabel(key), count: counts.get(key) }))
-  }, [songs])
+      .map((key) => ({ key, label: crateLabel(key), count: counts.get(key) }))
+  }, [songs, edition, crateKey, crateLabel])
 
   const inMonth = useMemo(
-    () => (month === 'all' ? songs : songs.filter((s) => monthKey(s.createdAt) === month)),
-    [songs, month]
+    () => (month === 'all' ? songs : songs.filter((s) => crateKey(s.createdAt) === month)),
+    [songs, month, crateKey]
   )
+
+  const playlistKey = edition.playlistKey(month)
+  const playlistLabel = playlistKey ? edition.playlistLabel(month) : ''
+
 
   const genres = useMemo(() => unique(inMonth.map((s) => s.genre)), [inMonth])
   const recommenders = useMemo(() => {
@@ -80,9 +88,16 @@ export default function SongList({
         onSelect={handleSelectMonth}
       />
 
-      <PlaylistLinks playlists={playlists} month={month} />
-      {isAdmin && (
-        <PlaylistLinksAdmin playlists={playlists} month={month} onSave={onSetPlaylistLinks} />
+      {playlistKey && (
+        <PlaylistLinks playlists={playlists} playlistKey={playlistKey} label={playlistLabel} />
+      )}
+      {playlistKey && isAdmin && (
+        <PlaylistLinksAdmin
+          playlists={playlists}
+          playlistKey={playlistKey}
+          label={playlistLabel}
+          onSave={onSetPlaylistLinks}
+        />
       )}
 
       <div className="view-toggle" role="tablist" aria-label="View">
@@ -107,7 +122,14 @@ export default function SongList({
       </div>
 
       {view === 'loaf' && (
-        <LoafLog songs={songs} comments={comments} usersById={usersById} month={month} />
+        <LoafLog
+          songs={songs}
+          comments={comments}
+          usersById={usersById}
+          month={month}
+          crateKey={crateKey}
+          crateLabel={crateLabel}
+        />
       )}
 
       {view === 'songs' && (
@@ -143,7 +165,7 @@ export default function SongList({
 
           {inMonth.length === 0 && (
             <p className="status">
-              No suggestions in {monthLabel(month)} yet — be the first!
+              No suggestions in {crateLabel(month)} yet — be the first!
             </p>
           )}
           {inMonth.length > 0 && visible.length === 0 && (

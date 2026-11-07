@@ -161,6 +161,32 @@ button:disabled {
   margin-bottom: 1.5rem;
 }
 
+/* Cross-links between the main page and the holiday edition. */
+.edition-link {
+  display: block;
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.edition-link:hover {
+  text-decoration: underline;
+}
+
+.holiday-banner {
+  padding: 0.6rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid #2c5a3a;
+  background: linear-gradient(90deg, rgba(214, 60, 60, 0.18), rgba(63, 174, 95, 0.18));
+  color: var(--text);
+  font-weight: 600;
+}
+
+.submissions-closed {
+  margin: 0 0 1rem;
+}
+
 .mock-banner {
   background: var(--surface-raised);
   border: 1px dashed var(--border);
@@ -493,7 +519,7 @@ button:disabled {
 
 .badge-toggle[aria-pressed='true'] {
   border-color: var(--accent);
-  background: rgba(244, 185, 66, 0.18);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
   color: var(--text);
 }
 
@@ -509,8 +535,8 @@ button:disabled {
   align-items: center;
   gap: 0.35rem;
   margin-left: 0.5rem;
-  background: rgba(244, 185, 66, 0.12);
-  border: 1px solid rgba(244, 185, 66, 0.45);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
   border-radius: 999px;
   padding: 0.05rem 0.6rem 0.05rem 0.35rem;
   font-size: 0.8rem;
@@ -550,7 +576,7 @@ button:disabled {
 
 .playlist-toggle.added {
   border: 1px solid var(--accent);
-  background: rgba(244, 185, 66, 0.18);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
   color: var(--accent);
 }
 
@@ -647,4 +673,99 @@ button:disabled {
 
 .profile-form {
   margin-bottom: 1.5rem;
+}
+
+/* ---------------------------------------------------------------------------
+   Holiday edition (/holiday/): red and green, wintry. The body class is set in
+   holiday/index.html; everything above follows via the custom properties.
+   --------------------------------------------------------------------------- */
+body.theme-holiday {
+  --bg: #0e2419;
+  --surface: #15321f;
+  --surface-raised: #1d4029;
+  --text: #f4f8f5;
+  --text-muted: #a9c2b1;
+  --accent: #d63c3c;
+  --accent-text: #ffffff;
+  --accent-2: #3fae5f;
+  --border: #2c5a3a;
+  --error: #ff8a8a;
+  /* Faint snowflakes scattered across the page. */
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.09) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 68% 7%, rgba(255, 255, 255, 0.07) 0 1px, transparent 2px),
+    radial-gradient(circle at 42% 55%, rgba(255, 255, 255, 0.06) 0 2px, transparent 3px),
+    radial-gradient(circle at 88% 72%, rgba(255, 255, 255, 0.08) 0 1px, transparent 2px),
+    radial-gradient(circle at 25% 85%, rgba(255, 255, 255, 0.05) 0 1.5px, transparent 2.5px);
+  background-size: 180px 180px, 240px 240px, 300px 300px, 210px 210px, 260px 260px;
+  background-attachment: fixed;
+}
+
+/* Gently falling snow, layered over the static flakes. */
+body.theme-holiday::before {
+  content: '';
+  position: fixed;
+  inset: -200px 0 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.35) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 70% 60%, rgba(255, 255, 255, 0.25) 0 1px, transparent 2px),
+    radial-gradient(circle at 45% 80%, rgba(255, 255, 255, 0.3) 0 2px, transparent 3px);
+  background-size: 200px 200px, 160px 160px, 260px 260px;
+  animation: holiday-snow 18s linear infinite;
+}
+
+body.theme-holiday #root {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes holiday-snow {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(200px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.theme-holiday::before {
+    animation: none;
+  }
+}
+
+/* Candy-cane stripe under the header. */
+.theme-holiday .app-header {
+  padding-bottom: 0.9rem;
+  border-bottom: 4px solid transparent;
+  border-image: repeating-linear-gradient(
+      135deg,
+      var(--accent) 0 12px,
+      #f4f8f5 12px 24px,
+      var(--accent-2) 24px 36px,
+      #f4f8f5 36px 48px
+    )
+    1;
+}
+
+.theme-holiday h1::before {
+  content: '❄ ';
+  color: #dff3ff;
+}
+
+.theme-holiday .genre-chip {
+  border-color: color-mix(in srgb, var(--accent-2) 55%, transparent);
+  color: #bfe8cb;
+}
+
+.theme-holiday .view-tab.active {
+  background: var(--accent-2);
+  color: #08170e;
+}
+
+.theme-holiday .edition-link {
+  color: #bfe8cb;
 }

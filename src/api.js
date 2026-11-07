@@ -30,10 +30,16 @@ export async function fetchAll() {
   return get()
 }
 
-export async function addSong(fields) {
+// Song calls take an optional `list` ('christmas' for the holiday edition);
+// the backend uses it to pick the Songs or ChristmasSongs tab.
+function songsCollection(list) {
+  return list === 'christmas' ? 'christmasSongs' : 'songs'
+}
+
+export async function addSong({ list, ...fields }) {
   // The real backend defaults inPlaylists; the mock has to do it itself.
-  if (isMockMode) return mockAdd('songs', { inPlaylists: 'false', ...fields })
-  const data = await post({ action: 'addSong', ...fields })
+  if (isMockMode) return mockAdd(songsCollection(list), { inPlaylists: 'false', ...fields })
+  const data = await post({ action: 'addSong', list, ...fields })
   return data.song
 }
 
@@ -43,15 +49,15 @@ export async function addComment(fields) {
   return data.comment
 }
 
-export async function editSong(fields) {
-  if (isMockMode) return mockEdit('songs', fields)
-  const data = await post({ action: 'editSong', ...fields })
+export async function editSong({ list, ...fields }) {
+  if (isMockMode) return mockEdit(songsCollection(list), fields)
+  const data = await post({ action: 'editSong', list, ...fields })
   return data.song
 }
 
-export async function deleteSong(fields) {
-  if (isMockMode) return mockDelete('songs', fields)
-  return post({ action: 'deleteSong', ...fields })
+export async function deleteSong({ list, ...fields }) {
+  if (isMockMode) return mockDelete(songsCollection(list), fields)
+  return post({ action: 'deleteSong', list, ...fields })
 }
 
 export async function editComment(fields) {
@@ -65,9 +71,9 @@ export async function deleteComment(fields) {
   return post({ action: 'deleteComment', ...fields })
 }
 
-export async function setInPlaylists(fields) {
-  if (isMockMode) return mockEdit('songs', fields)
-  const data = await post({ action: 'setInPlaylists', ...fields })
+export async function setInPlaylists({ list, ...fields }) {
+  if (isMockMode) return mockEdit(songsCollection(list), fields)
+  const data = await post({ action: 'setInPlaylists', list, ...fields })
   return data.song
 }
 
@@ -92,7 +98,8 @@ export async function editUser(fields) {
 // --- Mock backend (used until APPS_SCRIPT_URL is configured) ---
 
 // v3: meatloafs became loaf/firstTimer badge flags on comments.
-const MOCK_KEY = 'fta-mock-data-v3'
+// v4: holiday edition (christmasSongs + christmas-YYYY playlist rows).
+const MOCK_KEY = 'fta-mock-data-v4'
 
 const MOCK_SEED = {
   users: [
@@ -147,6 +154,28 @@ const MOCK_SEED = {
       createdAt: '2026-06-15T12:00:00.000Z',
     },
   ],
+  christmasSongs: [
+    {
+      id: 'seed-x1',
+      song: 'Christmas Wrapping',
+      artist: 'The Waitresses',
+      genre: 'New Wave',
+      userId: 'seed-u2',
+      notes: 'The only Christmas song about running out of cranberry sauce.',
+      createdAt: '2025-12-03T12:00:00.000Z',
+      inPlaylists: 'true',
+    },
+    {
+      id: 'seed-x2',
+      song: 'Christmas Time Is Here',
+      artist: 'Vince Guaraldi Trio',
+      genre: 'Jazz',
+      userId: 'seed-u3',
+      notes: 'Snow falling in audio form.',
+      createdAt: '2025-12-10T12:00:00.000Z',
+      inPlaylists: 'false',
+    },
+  ],
   comments: [
     {
       id: 'seed-c1',
@@ -166,6 +195,15 @@ const MOCK_SEED = {
       firstTimer: true,
       createdAt: '2026-07-05T12:00:00.000Z',
     },
+    {
+      id: 'seed-c3',
+      songId: 'seed-x1',
+      userId: 'seed-u1',
+      text: 'Every December this goes on first.',
+      loaf: true,
+      firstTimer: false,
+      createdAt: '2025-12-04T12:00:00.000Z',
+    },
   ],
   // Jun 2026 intentionally has no playlist row, to exercise the "no links" case.
   playlists: [
@@ -179,6 +217,11 @@ const MOCK_SEED = {
       spotifyUrl: 'https://open.spotify.com/playlist/jul-demo',
       appleMusicUrl: '',
     },
+    {
+      month: 'christmas-2025',
+      spotifyUrl: 'https://open.spotify.com/playlist/christmas-2025-demo',
+      appleMusicUrl: 'https://music.apple.com/playlist/christmas-2025-demo',
+    },
   ],
 }
 
@@ -190,6 +233,7 @@ function mockLoad() {
       return {
         users: [],
         songs: [],
+        christmasSongs: [],
         comments: [],
         playlists: [],
         ...JSON.parse(stored),
@@ -268,7 +312,7 @@ async function mockDelete(collection, { id }) {
   await new Promise((r) => setTimeout(r, 400))
   const data = mockLoad()
   data[collection] = data[collection].filter((r) => r.id !== id)
-  if (collection === 'songs') {
+  if (collection === 'songs' || collection === 'christmasSongs') {
     data.comments = data.comments.filter((c) => c.songId !== id)
   }
   localStorage.setItem(MOCK_KEY, JSON.stringify(data))

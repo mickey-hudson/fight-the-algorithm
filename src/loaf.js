@@ -11,11 +11,13 @@ export function isFlagged(value) {
   return value === true || String(value).toLowerCase() === 'true'
 }
 
-// Loaf moments for the given month ('all' = every month), newest first.
-export function loafLog(songs, comments, month) {
+// Loaf moments for the given crate ('all' = every crate), newest first.
+// crateKey maps a song's createdAt to its crate — months by default, years on
+// the holiday page (see editions.js).
+export function loafLog(songs, comments, crate, crateKey = monthKey) {
   const songsById = new Map(
     songs
-      .filter((s) => month === 'all' || monthKey(s.createdAt) === month)
+      .filter((s) => crate === 'all' || crateKey(s.createdAt) === crate)
       .map((s) => [s.id, s])
   )
   return comments

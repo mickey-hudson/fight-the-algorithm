@@ -14,7 +14,8 @@ One-time setup, ~5 minutes. You'll end up with a web app URL to paste into `src/
    [`Code.gs`](./Code.gs) from this folder.
 3. Save (⌘S), then in the function dropdown next to **Run**, select **`setup`** and click **Run**.
    - Grant the permissions it asks for (it's your own script accessing your own sheet).
-   - This creates the **Users**, **Songs**, **Comments**, and **Playlists** tabs
+   - This creates the **Users**, **Songs**, **ChristmasSongs**, **Comments**, and
+     **Playlists** tabs
      with headers. (Safe to re-run after updating the script — existing data is
      kept.)
 
@@ -114,6 +115,30 @@ The **Playlists** tab still works too, if you'd rather edit it by hand:
 - `month` is `YYYY-MM`; the single `all` row is the master playlist of every song.
 - Leave a URL cell blank if that platform doesn't have the playlist.
 - The app picks up changes on next load — no redeploy needed either way.
+
+## Holiday edition (ChristmasSongs)
+
+The app has a second page at `/holiday/` for Christmas suggestions, kept apart
+from the normal monthly crates. Its songs live in the **ChristmasSongs** tab, which
+has exactly the same columns as **Songs**. Comments on holiday songs go in the
+shared **Comments** tab.
+
+- Song actions (`addSong`, `editSong`, `deleteSong`, `setInPlaylists`) take an
+  optional `list: 'christmas'` to target ChristmasSongs; without it they use Songs.
+- `addSong` only accepts holiday songs from the day after US Thanksgiving through
+  December 31 (script timezone). The page
+  stays viewable year-round so past years can be browsed.
+- Holiday playlist links are one Playlists row per year, keyed `christmas-YYYY`:
+
+  | month          | spotifyUrl                 | appleMusicUrl             |
+  | -------------- | -------------------------- | ------------------------- |
+  | christmas-2026 | https://open.spotify.com/… | https://music.apple.com/… |
+
+  The curator can set these from the holiday page, the same as monthly links.
+
+Adding this to an existing sheet: update the script, re-run `setup()` (creates the
+ChristmasSongs tab and formats its text columns), then redeploy a new version. Until
+then, the app just shows an empty holiday page.
 
 ## Notes
 
