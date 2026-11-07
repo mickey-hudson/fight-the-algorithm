@@ -19,13 +19,19 @@ import ProfileForm from './components/ProfileForm'
 import SongForm from './components/SongForm'
 import SongList from './components/SongList'
 import { byId } from './users'
-import { currentMonthKey, monthKey, normalizeMonth } from './months'
+import { holidaySeasonStart, isHolidaySeason, normalizeMonth } from './months'
 
 const USER_KEY = 'fta-user-id'
 
-export default function App() {
+// Holiday-page URL, relative to the site root (see vite.config.js).
+const HOLIDAY_PATH = '/holiday/'
+
+export default function App({ edition }) {
   const [userId, setUserId] = useState(() => localStorage.getItem(USER_KEY) || '')
-  const [month, setMonth] = useState(currentMonthKey)
+  // The selected crate: a month on the main page, a year on the holiday page.
+  // The holiday page has no current crate outside the holiday season, so it picks one
+  // once the songs load (see below).
+  const [month, setMonth] = useState(() => edition.seedCrate() || 'all')
   const [users, setUsers] = useState([])
   const [songs, setSongs] = useState([])
   const [comments, setComments] = useState([])
@@ -38,14 +44,23 @@ export default function App() {
   useEffect(() => {
     fetchAll()
       .then((data) => {
+        const loaded = data[edition.songsKey] || []
         setUsers(data.users || [])
-        setSongs(data.songs)
+        setSongs(loaded)
+        if (!edition.seedCrate()) {
+          const newest = loaded
+            .map((s) => edition.crateKey(s.createdAt))
+            .filter(Boolean)
+            .sort()
+            .pop()
+          setMonth(newest || 'all')
+        }
         setComments(data.comments)
         setPlaylists(data.playlists || [])
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
-  }, [])
+  }, [edition])
 
   const usersById = useMemo(() => byId(users), [users])
   // A stored id that no longer exists (user row deleted) falls back to the gate.
@@ -70,11 +85,11 @@ export default function App() {
   }
 
   async function handleAddSong(fields) {
-    const song = await addSong({ ...fields, userId })
+    const song = await addSong({ ...fields, userId, list: edition.list })
     setSongs((prev) => [...prev, song])
     setShowForm(false)
-    // Jump to the new song's month so the submission is always visible.
-    setMonth(monthKey(song.createdAt))
+    // Jump to the new song's crate so the submission is always visible.
+    setMonth(edition.crateKey(song.createdAt))
   }
 
   async function handleAddComment(songId, text, { loaf, firstTimer }) {
@@ -83,12 +98,12 @@ export default function App() {
   }
 
   async function handleEditSong(id, fields) {
-    const updated = await editSong({ id, requester: userId, ...fields })
+    const updated = await editSong({ id, requester: userId, list: edition.list, ...fields })
     setSongs((prev) => prev.map((s) => (s.id === id ? updated : s)))
   }
 
   async function handleDeleteSong(id) {
-    await deleteSong({ id, requester: userId })
+    await deleteSong({ id, requester: userId, list: edition.list })
     setSongs((prev) => prev.filter((s) => s.id !== id))
     setComments((prev) => prev.filter((c) => c.songId !== id))
   }
@@ -97,6 +112,7 @@ export default function App() {
     const updated = await setInPlaylists({
       id: songId,
       requester: userId,
+      list: edition.list,
       inPlaylists: value ? 'true' : 'false',
     })
     setSongs((prev) => prev.map((s) => (s.id === songId ? updated : s)))
@@ -126,6 +142,8 @@ export default function App() {
   if (!currentUser) {
     return (
       <IdentityGate
+        title={edition.title}
+        tagline={edition.tagline}
         users={users}
         loading={loading}
         error={error}
@@ -139,8 +157,8 @@ export default function App() {
     <div className="app">
       <header className="app-header">
         <div>
-          <h1>Fight the Algorithm</h1>
-          <p className="tagline">Songs from friends, not the feed.</p>
+          <h1>{edition.title}</h1>
+          <p className="tagline">{edition.tagline}</p>
         </div>
         <div className="whoami">
           <span className="whoami-identity">
@@ -158,6 +176,17 @@ export default function App() {
         </div>
       </header>
 
+      {edition.id === 'main' && isHolidaySeason() && (
+        <a className="edition-link holiday-banner" href={HOLIDAY_PATH}>
+          🎄 The Holiday Edition is open — suggest Christmas songs →
+        </a>
+      )}
+      {edition.id === 'holiday' && (
+        <a className="edition-link" href="/">
+          ← Back to Fight the Algorithm
+        </a>
+      )}
+
       {isMockMode && (
         <p className="mock-banner">
           Demo mode — no backend configured, data stays in this browser.
@@ -173,16 +202,26 @@ export default function App() {
         />
       )}
 
-      <button className="primary toggle-form" onClick={() => setShowForm((v) => !v)}>
-        {showForm ? 'Never mind' : '+ Suggest a song'}
-      </button>
-
-      {showForm && <SongForm onSubmit={handleAddSong} />}
+      {edition.canSubmit() ? (
+        <>
+          <button className="primary toggle-form" onClick={() => setShowForm((v) => !v)}>
+            {showForm ? 'Never mind' : edition.suggestLabel}
+          </button>
+          {showForm && (
+            <SongForm onSubmit={handleAddSong} genrePlaceholder={edition.genrePlaceholder} />
+          )}
+        </>
+      ) : (
+        <p className="status submissions-closed">
+          Holiday suggestions open {formatSeasonStart()} 🎄
+        </p>
+      )}
 
       {loading && <p className="status">Loading suggestions…</p>}
       {error && <p className="status error">Couldn’t load suggestions: {error}</p>}
       {!loading && !error && (
         <SongList
+          edition={edition}
           songs={songs}
           comments={comments}
           playlists={playlists}
@@ -202,4 +241,14 @@ export default function App() {
       )}
     </div>
   )
+}
+
+// Outside the season it's always before this year's start, since the season
+// runs through December 31. e.g. "Friday, Nov 27".
+function formatSeasonStart() {
+  return holidaySeasonStart(new Date().getFullYear()).toLocaleDateString(undefined, {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+  })
 }

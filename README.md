@@ -33,6 +33,12 @@ shares song recommendations and comments on each other's picks.
   Spotify / Apple Music playlist ("All" shows the master playlist). Links live in the
   hand-maintained **Playlists** sheet tab; months without a row simply show no links.
 
+- **Holiday edition** — a separate red-and-green winter page at `/holiday/` for
+  Christmas suggestions, stored in their own **ChristmasSongs** sheet tab with a
+  yearly Spotify / Apple Music playlist (`christmas-YYYY` rows in Playlists). Crates
+  are years ("Christmas 2026"); suggestions open the day after Thanksgiving through
+  December 31, and the main page links to it during that window. Comments, badges, and the Loaf Log work the same.
+
 ## Local development
 
 ```sh

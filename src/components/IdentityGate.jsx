@@ -4,7 +4,15 @@ import { userLabel } from '../users'
 
 // First visit (or cleared browser): pick yourself from the crew, or register.
 // Honor system — same trust level as the old free-text name prompt.
-export default function IdentityGate({ users, loading, error, onSelect, onRegister }) {
+export default function IdentityGate({
+  title,
+  tagline,
+  users,
+  loading,
+  error,
+  onSelect,
+  onRegister,
+}) {
   const [registering, setRegistering] = useState(false)
   const [query, setQuery] = useState('')
 
@@ -16,8 +24,8 @@ export default function IdentityGate({ users, loading, error, onSelect, onRegist
 
   return (
     <div className="app name-prompt">
-      <h1>Fight the Algorithm</h1>
-      <p className="tagline">Songs from friends, not the feed.</p>
+      <h1>{title}</h1>
+      <p className="tagline">{tagline}</p>
 
       {loading && <p className="status">Loading the crew…</p>}
       {error && <p className="status error">Couldn’t load: {error}</p>}

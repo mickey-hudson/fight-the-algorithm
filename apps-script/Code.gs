@@ -1,9 +1,10 @@
 /**
  * Fight the Algorithm — Google Apps Script backend.
  *
- * Bound to a Google Sheet with four tabs (created by setup()):
- *   Users:     id | firstName | lastName | alias | createdAt
- *   Songs:     id | song | artist | genre | userId | notes | createdAt | inPlaylists
+ * Bound to a Google Sheet with five tabs (created by setup()):
+ *   Users:          id | firstName | lastName | alias | createdAt
+ *   Songs:          id | song | artist | genre | userId | notes | createdAt | inPlaylists
+ *   ChristmasSongs: same columns as Songs (the holiday edition's suggestions)
  *   Comments:  id | songId | userId | text | createdAt | loaf | firstTimer
  *   Playlists: month | spotifyUrl | appleMusicUrl
  *
@@ -28,8 +29,16 @@
  * before Users existed hold plain names in those columns — run
  * migrateToUsers() once from the editor to convert them (see README.md).
  *
+ * ChristmasSongs backs the holiday edition (/holiday/ in the app). Song
+ * actions take an optional list: 'christmas' to target it instead of Songs;
+ * anything else means Songs. New holiday songs are only accepted during the
+ * holiday season: the day after US Thanksgiving through December 31.
+ * Comments on holiday songs live in the shared Comments tab — song ids are
+ * UUIDs, so they never collide.
+ *
  * Playlists: one row per monthly playlist (month = YYYY-MM, e.g. 2026-07)
- * plus one row with month = all for the master playlist. Leave a URL cell
+ * plus one row with month = all for the master playlist, and one row per
+ * year for the holiday playlist (month = christmas-YYYY, e.g. christmas-2026). Leave a URL cell
  * blank if that platform has no playlist. The curator (ADMIN_USER_ID) sets
  * these from the app via the setPlaylistLinks action; editing the sheet
  * directly still works too.
@@ -43,6 +52,7 @@
 
 var USERS_SHEET = 'Users';
 var SONGS_SHEET = 'Songs';
+var CHRISTMAS_SONGS_SHEET = 'ChristmasSongs';
 var COMMENTS_SHEET = 'Comments';
 var MEATLOAFS_SHEET = 'Meatloafs';
 var PLAYLISTS_SHEET = 'Playlists';
@@ -61,6 +71,7 @@ var MAX_FIELD_LENGTH = 2000;
 var TEXT_COLUMNS = {};
 TEXT_COLUMNS[USERS_SHEET] = ['firstName', 'lastName', 'alias'];
 TEXT_COLUMNS[SONGS_SHEET] = ['song', 'artist', 'genre', 'notes'];
+TEXT_COLUMNS[CHRISTMAS_SONGS_SHEET] = ['song', 'artist', 'genre', 'notes'];
 TEXT_COLUMNS[COMMENTS_SHEET] = ['text'];
 TEXT_COLUMNS[PLAYLISTS_SHEET] = ['month'];
 
@@ -69,14 +80,17 @@ TEXT_COLUMNS[PLAYLISTS_SHEET] = ['month'];
 // keeps the toggle/form off everyone else's cards.
 var ADMIN_USER_ID = '70327eee-132f-4381-8aac-aaec1effa461';
 
-// Playlists.month is YYYY-MM, or the literal "all" for the master playlist.
+// Playlists.month is YYYY-MM, the literal "all" for the master playlist, or
+// christmas-YYYY for that year's holiday playlist.
 var MONTH_PATTERN = /^\d{4}-\d{2}$/;
+var CHRISTMAS_PLAYLIST_PATTERN = /^christmas-\d{4}$/;
 
 /** Run this once from the editor to create the tabs with headers. */
 function setup() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   ensureSheet(ss, USERS_SHEET, USERS_HEADERS);
   ensureSheet(ss, SONGS_SHEET, SONGS_HEADERS);
+  ensureSheet(ss, CHRISTMAS_SONGS_SHEET, SONGS_HEADERS);
   ensureSheet(ss, COMMENTS_SHEET, COMMENTS_HEADERS);
   ensureSheet(ss, PLAYLISTS_SHEET, PLAYLISTS_HEADERS);
 }
@@ -101,6 +115,7 @@ function doGet() {
   return jsonResponse({
     users: readAll(USERS_SHEET, USERS_HEADERS),
     songs: readAll(SONGS_SHEET, SONGS_HEADERS),
+    christmasSongs: readAll(CHRISTMAS_SONGS_SHEET, SONGS_HEADERS),
     comments: readAll(COMMENTS_SHEET, COMMENTS_HEADERS),
     playlists: readAll(PLAYLISTS_SHEET, PLAYLISTS_HEADERS),
   });
@@ -199,10 +214,30 @@ function userExists(id) {
   return findRowById(USERS_SHEET, USERS_HEADERS, clean(id)) !== null;
 }
 
+// Whitelist: only 'christmas' selects the holiday tab; anything else is Songs.
+function songsSheetFor(body) {
+  return clean(body.list) === 'christmas' ? CHRISTMAS_SONGS_SHEET : SONGS_SHEET;
+}
+
+// Day after US Thanksgiving (fourth Thursday of November) through Dec 31, in
+// the script's timezone. Must match holidaySeasonStart() in src/months.js.
+function isHolidaySeason() {
+  var today = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  var year = Number(today.slice(0, 4));
+  var nov1 = new Date(Date.UTC(year, 10, 1)).getUTCDay();
+  var thanksgiving = 1 + ((4 - nov1 + 7) % 7) + 21;
+  var start = year + '-11-' + (thanksgiving + 1);
+  return today >= start;
+}
+
 function addSong(body) {
   var missing = requireFields(body, ['song', 'artist', 'userId']);
   if (missing) return missing;
   if (!userExists(body.userId)) return { error: 'Unknown user' };
+  var sheetName = songsSheetFor(body);
+  if (sheetName === CHRISTMAS_SONGS_SHEET && !isHolidaySeason()) {
+    return { error: 'Holiday suggestions open the day after Thanksgiving' };
+  }
 
   var record = {
     id: Utilities.getUuid(),
@@ -214,7 +249,7 @@ function addSong(body) {
     createdAt: new Date().toISOString(),
     inPlaylists: 'false',
   };
-  appendRecord(SONGS_SHEET, SONGS_HEADERS, record);
+  appendRecord(sheetName, SONGS_HEADERS, record);
   return { song: record };
 }
 
@@ -225,7 +260,7 @@ function setInPlaylists(body) {
     return { error: 'Only the playlist curator can do that' };
   }
 
-  var found = findRowById(SONGS_SHEET, SONGS_HEADERS, body.id);
+  var found = findRowById(songsSheetFor(body), SONGS_HEADERS, body.id);
   if (!found) return { error: 'Song not found' };
 
   var record = found.record;
@@ -242,8 +277,8 @@ function setPlaylistLinks(body) {
   }
 
   var month = clean(body.month);
-  if (month !== 'all' && !MONTH_PATTERN.test(month)) {
-    return { error: 'Month must be "all" or in YYYY-MM format' };
+  if (month !== 'all' && !MONTH_PATTERN.test(month) && !CHRISTMAS_PLAYLIST_PATTERN.test(month)) {
+    return { error: 'Month must be "all", YYYY-MM, or christmas-YYYY' };
   }
 
   var record = {
@@ -307,7 +342,7 @@ function editSong(body) {
   var missing = requireFields(body, ['id', 'requester', 'song', 'artist']);
   if (missing) return missing;
 
-  var found = findRowById(SONGS_SHEET, SONGS_HEADERS, body.id);
+  var found = findRowById(songsSheetFor(body), SONGS_HEADERS, body.id);
   if (!found) return { error: 'Song not found' };
   if (found.record.userId !== clean(body.requester)) {
     return { error: 'Only the person who suggested a song can edit it' };
@@ -326,7 +361,7 @@ function deleteSong(body) {
   var missing = requireFields(body, ['id', 'requester']);
   if (missing) return missing;
 
-  var found = findRowById(SONGS_SHEET, SONGS_HEADERS, body.id);
+  var found = findRowById(songsSheetFor(body), SONGS_HEADERS, body.id);
   if (!found) return { error: 'Song not found' };
   if (found.record.userId !== clean(body.requester)) {
     return { error: 'Only the person who suggested a song can delete it' };

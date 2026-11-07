@@ -2,7 +2,13 @@ import { useState } from 'react'
 
 const EMPTY = { song: '', artist: '', genre: '', notes: '' }
 
-export default function SongForm({ onSubmit, initial, submitLabel = 'Add suggestion', onCancel }) {
+export default function SongForm({
+  onSubmit,
+  initial,
+  submitLabel = 'Add suggestion',
+  onCancel,
+  genrePlaceholder = 'Pop, Jazz, Hyperpop…',
+}) {
   const [fields, setFields] = useState(() =>
     initial
       ? {
@@ -55,7 +61,7 @@ export default function SongForm({ onSubmit, initial, submitLabel = 'Add suggest
         value={fields.genre}
         onChange={set('genre')}
         maxLength={50}
-        placeholder="Pop, Jazz, Hyperpop…"
+        placeholder={genrePlaceholder}
       />
 
       <label htmlFor="notes">Why this song?</label>
